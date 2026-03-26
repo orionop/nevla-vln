@@ -89,7 +89,7 @@ A set of challenge questions for each Unity scene is provided in the pdf files f
 Our system runs on Ubuntu 24.04 and uses ROS Jazzy in both simulation and onboard the real robot. Follow the instructions in the [docker/](docker/) folder to try the simulator by pulling the docker image provided and launching the system.
 
 The system uses Unity environments by default and has two parts:
-- The base navigation system is in the [autonomy_stack_mecanum_wheel_platform](autonomy_stack_mecanum_wheel_platform) folder. This system can be launched by itself without the AI module running. For the base navigation system, you may change the scene used by placing it in the [autonomy_stack_mecanum_wheel_platform/src/base_autonomy/vehicle_simulator/mesh/unity/](autonomy_stack_mecanum_wheel_platform/src/base_autonomy/vehicle_simulator/mesh/unity/) directory.
+- The base navigation system is in the [autonomy_stack_mecanum_wheel_platform](autonomy_stack_mecanum_wheel_platform/) folder. This system can be launched by itself without the AI module running. For the base navigation system, you may change the scene used by placing it in the [autonomy_stack_mecanum_wheel_platform/src/base_autonomy/vehicle_simulator/mesh/unity/](autonomy_stack_mecanum_wheel_platform/src/base_autonomy/vehicle_simulator/mesh/unity/) directory.
 - The vision-language model should be in the [ai_module](ai_module/) folder. The model currently in the folder under [ai_module/src](ai_module/src) is a "dummy model" that demonstrates how to read input questions and produces arbitrary examples of the different types of output responses which are to be used by the system and the evaluation node. **Teams are expected to come up with a model to replace this one.**
 
 #### Dummy Model
