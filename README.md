@@ -131,15 +131,6 @@ The coordinate frames used by the physical system are shown below. The camera po
   <img src="figures/system.png" alt="system" width="30%"/>
 </p>
 
-### Simulator
-
-In addition to the simulation system described above based on Unity, a second simulator is provided based on AI Habitat and uses Matterport3D environment models, which can be found under [matterport/](system/matterport/). Similarly, the system can be launched, synthesized data can be retrieved, and sending waypoints will navigate the robot in simulation. As a quick example, the command line below sends a waypoint to the system at 1m away from the start point. 
-
-`rostopic pub -1 /way_point_with_heading geometry_msgs/Pose2D '{x: 1.0, y: 0.0, theta: 0.0}'`
-
-Note that the simulation system provided a broader scope of data than the actual challenge but the data can be used to help prepare the AI module. During the challenge, only data listed above in [System](#system) is provided, matching the data onboard the real robot.
-
-![image](figures/simulator.png)
 
 ### Object-Referential Dataset (VLA-3D)
 
