@@ -29,6 +29,23 @@ class VerificationResult:
     reason: str
 
 
+def select_by_verification(candidates, is_match, max_checks: int = 6):
+    """Pick the first candidate that `is_match(candidate)` accepts, checking at
+    most `max_checks` (latency cap for the 10-min budget). If none verify, fall
+    back to the best geometric candidate (candidates[0]).
+
+    `is_match` is a callable candidate -> bool. Kept separate from the VLM call so
+    the selection policy is unit-testable with a mock (no API key / images).
+    """
+    cands = list(candidates)
+    if not cands:
+        return None
+    for inst in cands[:max_checks]:
+        if is_match(inst):
+            return inst
+    return cands[0]
+
+
 def verify_candidate(
     decomp: Decomposition,
     candidate_image_bgr,

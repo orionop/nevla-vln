@@ -20,6 +20,8 @@ from vln_orchestrator.perception.semantic_map_adapter import (  # noqa: E402
     object_node_to_instance,
 )
 from vln_orchestrator.reasoning.decomposition import heuristic_decompose  # noqa: E402
+from vln_orchestrator.reasoning.spatial import Instance  # noqa: E402
+from vln_orchestrator.reasoning.verification import select_by_verification  # noqa: E402
 
 
 # --- synthetic ObjectNode stand-ins ---------------------------------------- #
@@ -122,10 +124,37 @@ def test_resolve_superlative_and_locate():
     print("✓ resolve superlative + locate(phrase)")
 
 
+def test_candidates_ordering():
+    sm = SemanticMap()
+    sm.update_from_msg(FakeMsg([
+        node("hookah", 0, 0, 0.5, oid=10),
+        node("plant", 1, 0, 0.5, oid=11),
+        node("plant", 9, 0, 0.5, oid=12),
+    ]))
+    d = heuristic_decompose("Find the plant farthest from the hookah")
+    assert [c.id for c in sm.candidates(d)] == [12, 11]   # farthest first
+    print("✓ candidates() ordered (superlative, best-first)")
+
+
+def test_select_by_verification():
+    cands = [Instance("pillow", {}, id=i) for i in (1, 2, 3)]
+    # VLM accepts only id 2
+    assert select_by_verification(cands, lambda i: i.id == 2).id == 2
+    # none verify -> fall back to best geometric candidate (first)
+    assert select_by_verification(cands, lambda i: False).id == 1
+    # max_checks bounds the number of VLM calls
+    seen = []
+    select_by_verification(cands, lambda i: seen.append(i.id) or False, max_checks=2)
+    assert seen == [1, 2]
+    print("✓ select_by_verification (pick / fallback / max_checks)")
+
+
 if __name__ == "__main__":
     test_corners_to_bbox()
     test_node_to_instance()
     test_map_queries()
     test_resolve_binary_relation()
     test_resolve_superlative_and_locate()
+    test_candidates_ordering()
+    test_select_by_verification()
     print("\nAll semantic-map adapter tests passed.")

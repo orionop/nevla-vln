@@ -51,7 +51,7 @@ To swap it in for the dummy in the system startup script, replace the
 | Reasoning: counting | ✅ class+attr+relation filter over instances |
 | Perception adapter (`perception/`) | ✅ ObjectNode→Instance + SemanticMap, unit-tested |
 | Semantic-map subscription | ✅ conditional on `/object_nodes_list` (auto-fallback) |
-| Object-reference handler | ✅ resolves via map; ⬜ VLM attribute verify |
+| Object-reference handler | ✅ resolves via map + VLM attribute verification |
 | Numerical handler | ✅ counts over map instances |
 | Instruction-following handler | 🟡 locates landmarks + streams waypoints; ⬜ route planner (avoid/via) |
 

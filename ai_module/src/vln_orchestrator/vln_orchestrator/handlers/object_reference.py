@@ -52,10 +52,9 @@ class ObjectReferenceHandler(BaseHandler):
 
         sm = getattr(self.node, "semantic_map", None)
         if sm is not None and len(sm):
-            best = sm.resolve(decomp)
+            cands = sm.candidates(decomp)
+            best = self._select(cands, decomp)
             if best is not None:
-                # TODO: VLM-verify attributes via best.image_path when several
-                # candidates pass the geometry, to pick the right one.
                 self.node.publish_object_marker(
                     best.bbox,
                     label=decomp.target_object or best.label,
@@ -66,6 +65,45 @@ class ObjectReferenceHandler(BaseHandler):
         else:
             self.log.warn("ObjectReferenceHandler: no semantic map; fallback box.")
         self.fallback(question)
+
+    def _select(self, candidates, decomp):
+        """Pick the candidate matching the target. When a VLM client is available
+        and disambiguation is needed (attributes specified or >1 candidate), verify
+        each candidate's saved crop with the VLM; otherwise take the best geometric
+        candidate."""
+        if not candidates:
+            return None
+        need_vlm = bool(decomp.attributes) or len(candidates) > 1
+        if self._client is None or not need_vlm:
+            return candidates[0]
+
+        from vln_orchestrator.reasoning.verification import (
+            select_by_verification,
+            verify_candidate,
+        )
+
+        def is_match(inst) -> bool:
+            img = self._load_image(inst.image_path)
+            if img is None:
+                return False
+            try:
+                return verify_candidate(decomp, img, self._client).is_target
+            except Exception as e:
+                self.log.warn(f"verify failed for id={inst.id}: {e}")
+                return False
+
+        return select_by_verification(candidates, is_match)
+
+    def _load_image(self, path: str):
+        """Load a candidate's best crop (SysNav saves these as .npy BGR arrays)."""
+        if not path:
+            return None
+        try:
+            import numpy as np
+            return np.load(path)
+        except Exception as e:
+            self.log.warn(f"could not load candidate image {path!r}: {e}")
+            return None
 
     def fallback(self, question: str) -> None:
         # Always emit a marker (non-empty answer). Box at current vehicle pose.

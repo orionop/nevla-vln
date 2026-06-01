@@ -46,12 +46,11 @@ needed to flip between the two.
 
 ## Known gaps to close on the box
 
-- **Attribute verification:** `Instance.attributes` is empty (ObjectNode carries
-  no color/material). For attribute-qualified queries ("red pillow"), wire
-  `reasoning.verification.verify_candidate` using `Instance.image_path` (the best
-  crop SysNav saved) to confirm/rank candidates with the VLM.
+- **Attribute verification:** ✅ wired. When a query has attributes or >1
+  candidate passes the geometry, `ObjectReferenceHandler._select` VLM-verifies each
+  candidate's saved crop (`Instance.image_path`, a `.npy` BGR array) via
+  `reasoning.verification.verify_candidate`, capped at 6 checks. Runtime needs the
+  Gemini key + `cv2` (for `encode_image_jpg`) — verify `cv2` is in the image.
 - **Route planning:** instruction-following currently streams straight-line
   landmark waypoints in order. Swap in SysNav's `route_planner` to plan around
-  obstacles and honour via/avoid regions.
-- **cv2** for image verification is assumed present in the perception image; add
-  to the Dockerfile if not.
+  obstacles and honour via/avoid regions. (Still open.)

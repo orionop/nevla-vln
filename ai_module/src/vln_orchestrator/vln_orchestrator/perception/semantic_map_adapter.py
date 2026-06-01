@@ -93,29 +93,37 @@ class SemanticMap:
         cands = filter_by_label(self._instances, target)
         return filter_by_attributes(cands, attributes or [])
 
-    def resolve(self, decomp) -> Instance | None:
-        """Select the single best instance matching a Decomposition (target +
-        attributes + optional spatial relation to an anchor). Used for
-        object-reference grounding and instruction-following landmark lookup."""
+    def candidates(self, decomp) -> list[Instance]:
+        """All instances matching a Decomposition (target class + spatial relation
+        to an anchor), ordered best-first. Attributes are NOT filtered here (they
+        need visual verification) — the VLM verification step disambiguates among
+        these. Used by object-reference selection; resolve() returns the top one."""
         cands = self.instances_of(decomp.target_object, decomp.attributes)
         if not cands:
-            return None
+            return []
 
         rel = decomp.spatial_relation
         if rel and decomp.anchor_object:
             anchors = self.instances_of(decomp.anchor_object)
             if anchors:
                 if spatial.is_superlative_relation(rel):
-                    selector = spatial.superlative_selector(rel)
-                    return selector(cands, anchors[0].bbox)
+                    ref = anchors[0].bbox
+                    reverse = spatial.superlative_selector(rel) is spatial.farthest_from
+                    return sorted(
+                        cands,
+                        key=lambda c: spatial.distance(c.bbox, ref),
+                        reverse=reverse,
+                    )
                 if spatial.is_between_relation(rel):
-                    for c in cands:
+                    matches = [
+                        c for c in cands
                         if any(
                             spatial.between(c.bbox, anchors[i].bbox, anchors[j].bbox)
                             for i in range(len(anchors))
                             for j in range(i + 1, len(anchors))
-                        ):
-                            return c
+                        )
+                    ]
+                    return matches or cands
                 if spatial.is_binary_relation(rel):
                     pred = spatial.binary_predicate(rel)
                     matches = [
@@ -123,15 +131,20 @@ class SemanticMap:
                         if any(pred(c.bbox, a.bbox) for a in anchors)
                     ]
                     if matches:
-                        # prefer the match closest to its nearest anchor
-                        return min(
+                        # closest-to-anchor first
+                        return sorted(
                             matches,
                             key=lambda c: min(
                                 spatial.distance(c.bbox, a.bbox) for a in anchors
                             ),
                         )
-        # no usable relation -> highest-confidence candidate
-        return max(cands, key=lambda c: c.confidence)
+        # no usable relation -> highest-confidence first
+        return sorted(cands, key=lambda c: c.confidence, reverse=True)
+
+    def resolve(self, decomp) -> Instance | None:
+        """Single best instance for a Decomposition (top of candidates())."""
+        cands = self.candidates(decomp)
+        return cands[0] if cands else None
 
     def locate(self, phrase: str, decompose=None) -> Instance | None:
         """Resolve a free-text landmark phrase (e.g. an instruction sub-goal
