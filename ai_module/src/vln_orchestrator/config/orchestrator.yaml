@@ -1,0 +1,9 @@
+vln_orchestrator:
+  ros__parameters:
+    # waypoint reach distance (m) for instruction-following sequencing
+    waypoint_reach_dist: 1.0
+    # per-question wall-clock budget (s). Challenge limit is 600s (10 min); leave
+    # headroom so we always publish before the cutoff and keep time-bonus margin.
+    answer_deadline_s: 540.0
+    # VLM provider config is read from the handler/perception modules (env/keys),
+    # not hard-coded here, so secrets stay out of the repo.

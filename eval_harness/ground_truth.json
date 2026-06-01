@@ -1,0 +1,392 @@
+{
+  "arabic_room": {
+    "numerical": {
+      "question": "How many sofas are below a window?",
+      "answer": 2
+    },
+    "object_reference": [
+      {
+        "question": "Find the pillow closest to the book on the stool.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the wall lamp that is between a door frame and a window.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go near the stool under the picture and stop at the small table farthest from the columns.",
+        "trajectory_ply": "questions/arabic_room/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go to the potted plant furthest from the hookah, then take the path between the two columns, and stop at the tray on the table.",
+        "trajectory_ply": "questions/arabic_room/trajectory_q5.ply"
+      }
+    ]
+  },
+  "chinese_room": {
+    "numerical": {
+      "question": "Count the number of chairs with pillows on them.",
+      "answer": 6
+    },
+    "object_reference": [
+      {
+        "question": "Find the bowl on the table closest to the folding screen.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the pillow on the chair that is closest to the TV.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go near the potted plant on the table and stop at the painting near the TV.",
+        "trajectory_ply": "questions/chinese_room/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go near the tea table with the elephant figurine on it, then stop at the table with the horse figurine on it, avoiding the path between the chair and the folding screen.",
+        "trajectory_ply": "questions/chinese_room/trajectory_q5.ply"
+      }
+    ]
+  },
+  "home_building_1": {
+    "numerical": {
+      "question": "How many pillows are on the sofa under the pictures?",
+      "answer": 6
+    },
+    "object_reference": [
+      {
+        "question": "Find the clock on the TV cabinet.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the bowl closest to the knife rack near the trash can.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go to the coffee table with the kettle on it and stop at the dining table near the big picture.",
+        "trajectory_ply": "questions/home_building_1/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go to the nightstand with a clock on it, then take the path between the dining table and the picture, and stop at the trash can closest to the refridgerator.",
+        "trajectory_ply": "questions/home_building_1/trajectory_q5.ply"
+      }
+    ]
+  },
+  "home_building_2": {
+    "numerical": {
+      "question": "How many red pillows are on the sofa?",
+      "answer": 2
+    },
+    "object_reference": [
+      {
+        "question": "Find the lamp on the nightstand that has the photo on it.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the speaker on the TV cabinet closest to the potted plant on the TV cabinet.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go near the magazine on the ottoman, then go to the potted plant on the dressing table.",
+        "trajectory_ply": "questions/home_building_2/trajectory_q4.ply"
+      },
+      {
+        "question": "Take the path between the sofa and the coffee table and go to the kettle on the dining table, then go to the potted plant between the curtain and the TV.",
+        "trajectory_ply": "questions/home_building_2/trajectory_q5.ply"
+      }
+    ]
+  },
+  "hotel_room_1": {
+    "numerical": {
+      "question": "How many pillows are on the bed?",
+      "answer": 4
+    },
+    "object_reference": [
+      {
+        "question": "Find the bedside table farthest from the window.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the picture above the suitcase furthest from the floor.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go to the bedside table closest to the window and stop at the chair closest to the TV.",
+        "trajectory_ply": "questions/hotel_room_1/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go near the bedside table closest to the bench, then take the path between the TV and the bed to the picture closest to the TV.",
+        "trajectory_ply": "questions/hotel_room_1/trajectory_q5.ply"
+      }
+    ]
+  },
+  "hotel_room_2": {
+    "numerical": {
+      "question": "How many pictures are above the bed?",
+      "answer": 3
+    },
+    "object_reference": [
+      {
+        "question": "Find the flowers near the window.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the picture closest to the bench.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go between the bench and the bed and stop at the lamp closest to the fireplace.",
+        "trajectory_ply": "questions/hotel_room_2/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go to the picture closest to the door, then take the path between the TV cabinet and the bed, and stop by the curtain closest to the TV.",
+        "trajectory_ply": "questions/hotel_room_2/trajectory_q5.ply"
+      }
+    ]
+  },
+  "japanese_room": {
+    "numerical": {
+      "question": "How many calligraphy paintings are above the display ledge?",
+      "answer": 3
+    },
+    "object_reference": [
+      {
+        "question": "The lantern between the vase and the stone decoration that is closest to the vase.",
+        "gt_bbox": null
+      },
+      {
+        "question": "The red pillow closest to the sushi.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go near the small table with a vase on it and then to the flowers near the jar.",
+        "trajectory_ply": "questions/japanese_room/trajectory_q4.ply"
+      },
+      {
+        "question": "Go to the lantern closest to the fan decoration, then take the path near the wardrobe doors to the flowers on the display ledge.",
+        "trajectory_ply": "questions/japanese_room/trajectory_q5.ply"
+      }
+    ]
+  },
+  "livingroom_1": {
+    "numerical": {
+      "question": "How many chairs are near the table with a vase on it?",
+      "answer": 8
+    },
+    "object_reference": [
+      {
+        "question": "Find the vase on the cabinet below the picture.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the pillow on the sofa that is closest to the windows.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go to the potted plant closest to the pyramid candle holder and stop at the vase between the TV and the door.",
+        "trajectory_ply": "questions/livingroom_1/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go near the lamp closest to the black chair, then take the path between the sofa and the round tables, and stop at the cabinet with a picture above it.",
+        "trajectory_ply": "questions/livingroom_1/trajectory_q5.ply"
+      }
+    ]
+  },
+  "livingroom_2": {
+    "numerical": {
+      "question": "How many cups are on the coffee table?",
+      "answer": 2
+    },
+    "object_reference": [
+      {
+        "question": "Find the stool closest to the shelf near the TV cabinet.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the pillow on the sofa that is closest to the lamp.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go to the microwave on the kitchen counter and then go to the crystal ball decoration on the shelf near the TV.",
+        "trajectory_ply": "questions/livingroom_2/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go to the chair near the window, then stop at the soccer ball near the couch, avoiding the path between the TV and the tea table.",
+        "trajectory_ply": "questions/livingroom_2/trajectory_q5.ply"
+      }
+    ]
+  },
+  "livingroom_3": {
+    "numerical": {
+      "question": "How many photos are on the TV cabinet?",
+      "answer": 2
+    },
+    "object_reference": [
+      {
+        "question": "Find the potted plant near the books on the cabinet.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the vase between the cabinet and the stool.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Take the path near the TV and go to the pillow farthest from the lamp.",
+        "trajectory_ply": "questions/livingroom_3/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go near the stool, then take the path near the cabinet, and stop at the bowl on the table.",
+        "trajectory_ply": "questions/livingroom_3/trajectory_q5.ply"
+      }
+    ]
+  },
+  "livingroom_4": {
+    "numerical": {
+      "question": "How many pillows are on a sofa?",
+      "answer": 6
+    },
+    "object_reference": [
+      {
+        "question": "Find the picture closest to a window.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the fossil decoration closest to the phone.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go near the chair closest to the bookcase and stop at the table with the flowers on it.",
+        "trajectory_ply": "questions/livingroom_4/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go near the fireplace, then go to the window closest to the bookcase, and stop at the chair farthest from the mirror.",
+        "trajectory_ply": "questions/livingroom_4/trajectory_q5.ply"
+      }
+    ]
+  },
+  "loft": {
+    "numerical": {
+      "question": "How many black pillows are on the sofa?",
+      "answer": 2
+    },
+    "object_reference": [
+      {
+        "question": "The blue chair that is closest to the cup of coffee.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the potted plant between a vase and the cabinet with a TV on it.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go to the cup near the TV remote and avoid the path near the cabinet.",
+        "trajectory_ply": "questions/loft/trajectory_q4.ply"
+      },
+      {
+        "question": "Go near the fireplace, pass by the stairs, then stop at the sphere decoration on the cabinet.",
+        "trajectory_ply": "questions/loft/trajectory_q5.ply"
+      }
+    ]
+  },
+  "office_1": {
+    "numerical": {
+      "question": "How many computer monitors are on the table closest to the map wall decal?",
+      "answer": 6
+    },
+    "object_reference": [
+      {
+        "question": "Find the potted plant on the file cabinet.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the paper cup on the table closest to the projector screen.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go to the potted plant furthest from the projector screen then stop at the water cooler near the window.",
+        "trajectory_ply": "questions/office_1/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go near the potted plant on the shelf, then take the path between the two tables, and stop at the bench closest to the map wall decal.",
+        "trajectory_ply": "questions/office_1/trajectory_q5.ply"
+      }
+    ]
+  },
+  "office_2": {
+    "numerical": {
+      "question": "How many potted plants are on a table?",
+      "answer": 1
+    },
+    "object_reference": [
+      {
+        "question": "Find the computer monitor closest to the cabinet with a phone on it.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the box on the cabinet that is closest to the whiteboard.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go near the potted plant on the cabinet and stop at the window closest to the clock.",
+        "trajectory_ply": "questions/office_2/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go to the trash can near the cabinet, then go to the folder on the cabinet closest to the whiteboard, and finally, to the door near the exit sign.",
+        "trajectory_ply": "questions/office_2/trajectory_q5.ply"
+      }
+    ]
+  },
+  "studio": {
+    "numerical": {
+      "question": "How many framed records are above the couch?",
+      "answer": 3
+    },
+    "object_reference": [
+      {
+        "question": "Find the vase closest to the guitar.",
+        "gt_bbox": null
+      },
+      {
+        "question": "Find the beer bottle furthest from the couch.",
+        "gt_bbox": null
+      }
+    ],
+    "instruction_following": [
+      {
+        "question": "Go to the vases on the cabinet below the TV and stop at the guitar near the couch.",
+        "trajectory_ply": "questions/studio/trajectory_q4.ply"
+      },
+      {
+        "question": "First, go to the vase closest to the easel, then, take the path between the couch and the table and stop at the window closest to the couch.",
+        "trajectory_ply": "questions/studio/trajectory_q5.ply"
+      }
+    ]
+  }
+}

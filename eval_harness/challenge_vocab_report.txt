@@ -1,0 +1,163 @@
+Challenge object vocabulary — mined from 75 questions
+============================================================
+84 distinct object phrases, 68 head nouns.
+
+Ranked object phrases (phrase: count):
+  15  table
+  13  tv
+  13  cabinet
+  12  pillow
+  12  picture
+  11  plant
+  11  vase
+  10  chair
+   9  sofa
+   9  window
+   6  lamp
+   6  tv cabinet
+   6  couch
+   5  stool
+   5  bed
+   4  bench
+   4  flower
+   3  bowl
+   3  clock
+   3  coffee table
+   3  dining table
+   3  bedside table
+   3  fireplace
+   3  door
+   3  cup
+   3  shelf
+   2  book
+   2  column
+   2  screen
+   2  tea table
+   2  trash can
+   2  kettle
+   2  nightstand
+   2  photo
+   2  curtain
+   2  display ledge
+   2  phone
+   2  bookcase
+   2  map wall
+   2  projector screen
+   2  whiteboard
+   2  guitar
+   1  door frame
+   1  hookah
+   1  tray
+   1  painting
+   1  elephant figurine
+   1  horse figurine
+   1  knife rack
+   1  trash
+   1  refridgerator
+   1  speaker
+   1  magazine
+   1  ottoman
+   1  dressing table
+   1  floor
+   1  calligraphy painting
+   1  lantern
+   1  stone decoration
+   1  sushi
+   1  jar
+   1  fan decoration
+   1  wardrobe door
+   1  pyramid candle holder
+   1  microwave
+   1  kitchen counter
+   1  crystal ball decoration
+   1  soccer ball
+   1  fossil decoration
+   1  mirror
+   1  coffee
+   1  tv remote
+   1  stair
+   1  sphere decoration
+   1  computer monitor
+   1  file cabinet
+   1  paper cup
+   1  water cooler
+   1  box
+   1  folder
+   1  exit sign
+   1  record
+   1  beer bottle
+   1  easel
+
+Grouped by head noun:
+  ball: soccer ball
+  bed: bed
+  bench: bench
+  book: book
+  bookcase: bookcase
+  bottle: beer bottle
+  bowl: bowl
+  box: box
+  cabinet: cabinet, file cabinet, tv cabinet
+  can: trash can
+  chair: chair
+  clock: clock
+  coffee: coffee
+  column: column
+  cooler: water cooler
+  couch: couch
+  counter: kitchen counter
+  cup: cup, paper cup
+  curtain: curtain
+  decoration: crystal ball decoration, fan decoration, fossil decoration, sphere decoration, stone decoration
+  door: door, wardrobe door
+  easel: easel
+  figurine: elephant figurine, horse figurine
+  fireplace: fireplace
+  floor: floor
+  flower: flower
+  folder: folder
+  frame: door frame
+  guitar: guitar
+  holder: pyramid candle holder
+  hookah: hookah
+  jar: jar
+  kettle: kettle
+  lamp: lamp
+  lantern: lantern
+  ledge: display ledge
+  magazine: magazine
+  microwave: microwave
+  mirror: mirror
+  monitor: computer monitor
+  nightstand: nightstand
+  ottoman: ottoman
+  painting: calligraphy painting, painting
+  phone: phone
+  photo: photo
+  picture: picture
+  pillow: pillow
+  plant: plant
+  rack: knife rack
+  record: record
+  refridgerator: refridgerator
+  remote: tv remote
+  screen: projector screen, screen
+  shelf: shelf
+  sign: exit sign
+  sofa: sofa
+  speaker: speaker
+  stair: stair
+  stool: stool
+  sushi: sushi
+  table: bedside table, coffee table, dining table, dressing table, table, tea table
+  trash: trash
+  tray: tray
+  tv: tv
+  vase: vase
+  wall: map wall
+  whiteboard: whiteboard
+  window: window
+
+Dropped (abstract/structural/attribute-only heads):
+  14  path
+   1  number

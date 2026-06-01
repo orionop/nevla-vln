@@ -1,3 +1,24 @@
 .vscode
 
 .DS_Store
+
+# local Claude settings (personal, not shared)
+.claude/settings.local.json
+
+# secrets / env — ignore all .env files EXCEPT the committed template
+.env
+.env.*
+!.env.example
+
+# SysNav reference clone (vendored selectively later, not committed wholesale)
+_reference_SysNav/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# eval harness runtime artifacts
+eval_harness/runs/
+debug/
+output/
