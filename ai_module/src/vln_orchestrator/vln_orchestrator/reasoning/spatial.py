@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Geometric spatial-relation predicates over 3D object instances.
 
-Pure geometry (numpy-only), so it is unit-testable off-robot with synthetic
-boxes. Both the numerical counting filter (reasoning.counting) and the
-object-reference candidate ranking call these to adjudicate relations like
+Pure standard-library geometry (no numpy), so it is unit-testable off-robot
+with synthetic boxes AND imposes zero third-party dependencies at runtime in
+the ROS container. Both the numerical counting filter (reasoning.counting) and
+the object-reference candidate ranking call these to adjudicate relations like
 "under the window", "on the table", "between the two columns", "farthest from
 the columns".
 
@@ -14,9 +15,8 @@ consistent with the scoring proxy.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
-
-import numpy as np
 
 
 @dataclass
@@ -31,26 +31,28 @@ class Instance:
 # --------------------------------------------------------------------------- #
 # Low-level geometry on box dicts
 # --------------------------------------------------------------------------- #
-def center3(b: dict) -> np.ndarray:
-    return np.array([b["cx"], b["cy"], b["cz"]], dtype=float)
+def center3(b: dict) -> tuple[float, float, float]:
+    return (float(b["cx"]), float(b["cy"]), float(b["cz"]))
 
 
-def center2(b: dict) -> np.ndarray:
-    return np.array([b["cx"], b["cy"]], dtype=float)
+def center2(b: dict) -> tuple[float, float]:
+    return (float(b["cx"]), float(b["cy"]))
 
 
 def bounds(b: dict):
     """(min_xyz, max_xyz) corners of the axis-aligned box."""
-    half = np.array([b["l"], b["w"], b["h"]], dtype=float) / 2.0
-    c = center3(b)
-    return c - half, c + half
+    cx, cy, cz = center3(b)
+    hl, hw, hh = b["l"] / 2.0, b["w"] / 2.0, b["h"] / 2.0
+    return (cx - hl, cy - hw, cz - hh), (cx + hl, cy + hw, cz + hh)
 
 
 def distance(a: dict, b: dict, planar: bool = True) -> float:
     """Center-to-center distance; planar (xy) by default."""
+    ax, ay, az = center3(a)
+    bx, by, bz = center3(b)
     if planar:
-        return float(np.linalg.norm(center2(a) - center2(b)))
-    return float(np.linalg.norm(center3(a) - center3(b)))
+        return math.hypot(ax - bx, ay - by)
+    return math.sqrt((ax - bx) ** 2 + (ay - by) ** 2 + (az - bz) ** 2)
 
 
 def xy_overlap(a: dict, b: dict) -> bool:
@@ -73,7 +75,7 @@ def near(t: dict, a: dict, thresh: float = NEAR_THRESH_M) -> bool:
 
 
 def below(t: dict, a: dict) -> bool:
-    """target is below anchor: target center under anchor's bottom-ish and the
+    """target is below anchor: target center under anchor's center and the
     footprints overlap (so "below the window", "under the picture")."""
     return center3(t)[2] < center3(a)[2] and xy_overlap(t, a)
 
@@ -98,16 +100,18 @@ def between(t: dict, a: dict, b: dict, tol: float = 1.0) -> bool:
     """target lies between anchors a and b in the xy plane: its perpendicular
     distance to the segment a-b is within tol AND its projection falls inside
     the segment (e.g. "between the two columns")."""
-    p, q, x = center2(a), center2(b), center2(t)
-    seg = q - p
-    seg_len2 = float(seg @ seg)
+    px, py = center2(a)
+    qx, qy = center2(b)
+    xx, xy = center2(t)
+    sx, sy = qx - px, qy - py
+    seg_len2 = sx * sx + sy * sy
     if seg_len2 == 0.0:
         return distance(t, a, planar=True) <= tol
-    s = float((x - p) @ seg) / seg_len2          # projection parameter
+    s = ((xx - px) * sx + (xy - py) * sy) / seg_len2     # projection parameter
     if not (0.0 <= s <= 1.0):
         return False
-    proj = p + s * seg
-    return float(np.linalg.norm(x - proj)) <= tol
+    proj_x, proj_y = px + s * sx, py + s * sy
+    return math.hypot(xx - proj_x, xy - proj_y) <= tol
 
 
 # --------------------------------------------------------------------------- #
