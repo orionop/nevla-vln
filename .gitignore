@@ -28,3 +28,4 @@ output/
 vla3d/
 *.zip
 eval_harness/objref_candidates.json
+eval_harness/viz/
