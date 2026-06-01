@@ -6,12 +6,18 @@ COPY src/dummy_vlm /home/docker/ai_module/src/dummy_vlm
 COPY src/vln_orchestrator /home/docker/ai_module/src/vln_orchestrator
 
 # VLM client dependencies for the live Gemini/Qwen path (lazy-imported by
-# reasoning/vlm_client.py; only needed when an API key is present). The image
-# runs as user 'docker', so install to the user site; --break-system-packages
-# satisfies PEP 668 on Ubuntu 24. cv2 (image verification) is already in the
-# perception image and not needed for text decomposition.
-RUN python3 -m pip install --no-cache-dir --user --break-system-packages \
-      "openai>=1.40" "pydantic>=2"
+# reasoning/vlm_client.py; only needed when an API key is present). The base
+# image's system python3 has no pip, so install pip (as root) then the SDKs
+# system-wide; --break-system-packages satisfies PEP 668 on Ubuntu 24. cv2
+# (image verification) is already in the perception image. Switch back to the
+# 'docker' user afterwards so the runtime user is unchanged.
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3-pip \
+    && python3 -m pip install --no-cache-dir --break-system-packages \
+         "openai>=1.40" "pydantic>=2" \
+    && rm -rf /var/lib/apt/lists/*
+USER docker
 
 # Build both packages against the already-built workspace dependencies.
 # vln_orchestrator is pure-Python (rclpy + std/geometry/visualization msgs);
