@@ -22,3 +22,9 @@ __pycache__/
 eval_harness/runs/
 debug/
 output/
+
+# VLA-3D dataset + derived data (third-party license; regenerate from VLA3D_DIR).
+# Keep the loader/tools in git, not the data itself.
+vla3d/
+*.zip
+eval_harness/objref_candidates.json
