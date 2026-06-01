@@ -136,7 +136,11 @@ def main(args=None) -> None:
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        # On SIGINT, rclpy's signal handler may have already shut down the
+        # context; calling shutdown() again raises RCLError. Guard it so the
+        # process exits cleanly (0) instead of dying with a traceback.
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":
