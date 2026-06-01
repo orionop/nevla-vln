@@ -5,25 +5,24 @@ Wired so far:
   1. Parse the command into ORDERED sub-goals + via/avoid constraints
      (reasoning.instruction_parser — pure logic, validated on all 30 training cmds).
 
-Pending perception/planning on the Jazzy box (documented hooks below):
-  2. Localise each landmark in the semantic map (SysNav semantic_mapping).
-  3. Plan a path through the ordered GOTO/STOP/VIA landmarks honoring avoid
-     regions (SysNav route_planner visibility graph).
-  4. Stream the Pose2D sequence to /way_point_with_heading, advancing on arrival
-     (reach distance ~1.0 m; cf. pubPathWaypoints in dummyVLM.cpp).
+Wired so far (perception-gated):
+  2. Localise each ordered landmark in the semantic map (SemanticMap.locate).
+  3. Stream the resulting (x, y) sequence to /way_point_with_heading via the
+     node's arrival-advancing streamer (reach ~1.0 m; cf. pubPathWaypoints).
+
+Still pending (needs SysNav route_planner on the GPU box):
+  - obstacle-aware path planning between landmarks and honouring avoid/via
+    regions; we currently send straight-line landmark waypoints in order.
 
 Scored 0-6 with partial credit; penalties for wrong order / missed / forbidden.
 """
 from __future__ import annotations
 
 from vln_orchestrator.handlers.base import BaseHandler
-from vln_orchestrator.reasoning.instruction_parser import GoalKind, parse_instruction
+from vln_orchestrator.reasoning.instruction_parser import parse_instruction
 
 
 class InstructionFollowingHandler(BaseHandler):
-    #: distance (m) at which a waypoint is considered reached before advancing
-    REACH_DIST = 1.0
-
     def handle(self, question: str) -> None:
         parsed = parse_instruction(question)
         order = " -> ".join(
@@ -35,21 +34,25 @@ class InstructionFollowingHandler(BaseHandler):
                 "avoid: " + "; ".join(g.landmark for g in parsed.avoid_regions)
             )
 
-        # --- PERCEPTION + PLANNING HOOK (Jazzy box) --------------------------
-        # waypoints = []
-        # for g in parsed.ordered_waypoints:           # GOTO/VIA/STOP in order
-        #     pos = self.node.semantic_map.locate(g.landmark)   # (x, y) in map
-        #     waypoints.append(pos)
-        # path = self.node.route_planner.plan(
-        #     waypoints, avoid=[self.node.semantic_map.region(a.landmark)
-        #                       for a in parsed.avoid_regions])
-        # self._stream_waypoints(path)                  # advance on arrival
-        # return
-        # ---------------------------------------------------------------------
-        self.log.warn(
-            "InstructionFollowingHandler: perception/planning not wired; "
-            "using fallback."
-        )
+        sm = getattr(self.node, "semantic_map", None)
+        if sm is not None and len(sm):
+            waypoints: list[tuple[float, float]] = []
+            for g in parsed.ordered_waypoints:          # GOTO/VIA/STOP, in order
+                inst = sm.locate(g.landmark)
+                if inst is not None:
+                    waypoints.append((inst.bbox["cx"], inst.bbox["cy"]))
+                    self.log.info(f"  located {g.kind.value}:{g.landmark!r} -> "
+                                  f"({inst.bbox['cx']:.2f},{inst.bbox['cy']:.2f})")
+                else:
+                    self.log.warn(f"  could not locate {g.landmark!r}; skipping")
+            if waypoints:
+                # TODO: replace straight-line landmark waypoints with a route
+                # planned around obstacles + avoid/via regions (SysNav route_planner).
+                self.node.stream_waypoints(waypoints)
+                return
+            self.log.warn("InstructionFollowingHandler: no landmarks located; fallback.")
+        else:
+            self.log.warn("InstructionFollowingHandler: no semantic map; fallback.")
         self.fallback(question)
 
     def fallback(self, question: str) -> None:

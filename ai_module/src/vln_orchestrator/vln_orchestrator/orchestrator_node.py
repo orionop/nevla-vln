@@ -57,6 +57,14 @@ class VLNOrchestrator(Node):
         self.vehicle_x = 0.0
         self.vehicle_y = 0.0
 
+        # --- instruction-following waypoint streaming ---
+        self.REACH_DIST = 1.0                 # m; advance to next waypoint within this
+        self._wp_queue: list[tuple[float, float]] = []
+
+        # --- perception (semantic map), wired only if SysNav is built ---
+        self.semantic_map = None
+        self._wire_perception()
+
         # --- handlers ---
         self._handlers = {
             QType.NUMERICAL: NumericalHandler(self),
@@ -68,11 +76,42 @@ class VLNOrchestrator(Node):
         self.get_logger().info("VLN Orchestrator ready; awaiting /challenge_question...")
 
     # ------------------------------------------------------------------ #
+    # Perception wiring
+    # ------------------------------------------------------------------ #
+    def _wire_perception(self) -> None:
+        """Subscribe to SysNav's semantic map IFF its message type is available.
+
+        The ObjectNodeList message ships with SysNav's tare_planner build (on the
+        GPU box). When it isn't present (e.g. the current minimal container), we
+        skip the subscription and the handlers run their fallbacks — so the node
+        works in both worlds without code changes.
+        """
+        try:
+            from tare_planner.msg import ObjectNodeList
+        except Exception as e:
+            self.get_logger().warn(
+                f"perception: tare_planner/ObjectNodeList unavailable ({e}); "
+                "running in fallback mode (no semantic map)."
+            )
+            return
+        from vln_orchestrator.perception.semantic_map_adapter import SemanticMap
+        self.semantic_map = SemanticMap()
+        self.create_subscription(
+            ObjectNodeList, "/object_nodes_list", self._on_semantic_map, 50
+        )
+        self.get_logger().info("perception: subscribed to /object_nodes_list.")
+
+    def _on_semantic_map(self, msg) -> None:
+        if self.semantic_map is not None:
+            self.semantic_map.update_from_msg(msg)
+
+    # ------------------------------------------------------------------ #
     # Callbacks
     # ------------------------------------------------------------------ #
     def _on_pose(self, msg: Odometry) -> None:
         self.vehicle_x = msg.pose.pose.position.x
         self.vehicle_y = msg.pose.pose.position.y
+        self._advance_waypoints()
 
     def _on_question(self, msg: String) -> None:
         question = msg.data.strip()
@@ -122,6 +161,31 @@ class VLNOrchestrator(Node):
 
     def publish_waypoint(self, x: float, y: float, heading: float = 0.0) -> None:
         self._waypoint_pub.publish(Pose2D(x=float(x), y=float(y), theta=float(heading)))
+
+    def stream_waypoints(self, points: list) -> None:
+        """Queue an ordered list of (x, y) waypoints and publish the first; the
+        rest are advanced in _on_pose as the vehicle reaches each (cf. the
+        sequential pubPathWaypoints behaviour of dummyVLM)."""
+        self._wp_queue = [(float(x), float(y)) for x, y in points]
+        if self._wp_queue:
+            x, y = self._wp_queue[0]
+            self.publish_waypoint(x, y, self._heading_towards(x, y))
+            self.get_logger().info(f"streaming {len(self._wp_queue)} waypoint(s)")
+
+    def _advance_waypoints(self) -> None:
+        if not self._wp_queue:
+            return
+        tx, ty = self._wp_queue[0]
+        if math.hypot(tx - self.vehicle_x, ty - self.vehicle_y) <= self.REACH_DIST:
+            self._wp_queue.pop(0)
+            if self._wp_queue:
+                nx, ny = self._wp_queue[0]
+                self.publish_waypoint(nx, ny, self._heading_towards(nx, ny))
+            else:
+                self.get_logger().info("waypoint sequence complete.")
+
+    def _heading_towards(self, x: float, y: float) -> float:
+        return math.atan2(y - self.vehicle_y, x - self.vehicle_x)
 
     def now_msg(self):
         return self.get_clock().now().to_msg()

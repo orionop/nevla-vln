@@ -50,18 +50,21 @@ class ObjectReferenceHandler(BaseHandler):
             f"anchor={decomp.anchor_object!r}"
         )
 
-        # --- PERCEPTION HOOK (Jazzy box) -------------------------------------
-        # candidates = self.node.semantic_map.instances_of(decomp.target_object,
-        #                                                   attributes=decomp.attributes)
-        # best = select_best(candidates, decomp, self._client)  # verify + rank
-        # if best is not None:
-        #     self.node.publish_object_marker(best.bbox, label=decomp.target_object,
-        #                                     obj_id=best.id)
-        #     return
-        # ---------------------------------------------------------------------
-        self.log.warn(
-            "ObjectReferenceHandler: perception not wired; emitting fallback box."
-        )
+        sm = getattr(self.node, "semantic_map", None)
+        if sm is not None and len(sm):
+            best = sm.resolve(decomp)
+            if best is not None:
+                # TODO: VLM-verify attributes via best.image_path when several
+                # candidates pass the geometry, to pick the right one.
+                self.node.publish_object_marker(
+                    best.bbox,
+                    label=decomp.target_object or best.label,
+                    obj_id=best.id,
+                )
+                return
+            self.log.warn("ObjectReferenceHandler: no candidate matched; fallback.")
+        else:
+            self.log.warn("ObjectReferenceHandler: no semantic map; fallback box.")
         self.fallback(question)
 
     def fallback(self, question: str) -> None:

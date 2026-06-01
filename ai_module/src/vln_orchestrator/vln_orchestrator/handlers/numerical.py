@@ -50,13 +50,12 @@ class NumericalHandler(BaseHandler):
             f"anchor={decomp.anchor_object!r}"
         )
 
-        # --- PERCEPTION HOOK (Jazzy box) -------------------------------------
-        # instances = self.node.semantic_map.all_instances()  # list[Instance]
-        # count = count_matching(decomp, instances)
-        # self.node.publish_numerical(count)
-        # return
-        # ---------------------------------------------------------------------
-        self.log.warn("NumericalHandler: perception not wired; using fallback.")
+        sm = getattr(self.node, "semantic_map", None)
+        if sm is not None and len(sm):
+            count = count_matching(decomp, sm.all_instances())
+            self.node.publish_numerical(count)
+            return
+        self.log.warn("NumericalHandler: no semantic map; using fallback.")
         self.fallback(question)
 
     def fallback(self, question: str) -> None:

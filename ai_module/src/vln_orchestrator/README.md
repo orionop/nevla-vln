@@ -49,10 +49,14 @@ To swap it in for the dummy in the system startup script, replace the
 | Reasoning: instruction parser | ✅ ordered sub-goals + via/avoid, 30/30 |
 | Reasoning: spatial predicates | ✅ near/under/on/between/closest/farthest |
 | Reasoning: counting | ✅ class+attr+relation filter over instances |
-| Object-reference handler | 🟡 decomposition wired; perception hook pending |
-| Instruction-following handler | 🟡 parser wired; planning hook pending |
-| Numerical handler | 🟡 decomposition + counting wired; instance source pending |
+| Perception adapter (`perception/`) | ✅ ObjectNode→Instance + SemanticMap, unit-tested |
+| Semantic-map subscription | ✅ conditional on `/object_nodes_list` (auto-fallback) |
+| Object-reference handler | ✅ resolves via map; ⬜ VLM attribute verify |
+| Numerical handler | ✅ counts over map instances |
+| Instruction-following handler | 🟡 locates landmarks + streams waypoints; ⬜ route planner (avoid/via) |
 
-Remaining 🟡 work is the perception/planning wiring (semantic map + route planner),
-which lands on the Jazzy box where the full SysNav stack + SAM2/YOLO are present.
-Reasoning is ROS-free and unit-tested on the Mac (`test/`).
+The orchestrator now consumes a semantic map: it subscribes to `/object_nodes_list`
+only if SysNav's `tare_planner/ObjectNodeList` message is built (GPU box), else it
+runs handler fallbacks. Bring-up steps + remaining gaps (attribute verification,
+route planning) are in [PERCEPTION.md](PERCEPTION.md). All reasoning + the adapter
+are ROS-free and unit-tested on the Mac (`test/`).

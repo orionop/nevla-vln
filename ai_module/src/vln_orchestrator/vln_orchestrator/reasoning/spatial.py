@@ -26,6 +26,8 @@ class Instance:
     bbox: dict                                   # cx,cy,cz,l,w,h[,heading]
     id: int = -1
     attributes: list[str] = field(default_factory=list)
+    confidence: float = 1.0
+    image_path: str = ""                         # best crop (.npy) for VLM verify
 
 
 # --------------------------------------------------------------------------- #
