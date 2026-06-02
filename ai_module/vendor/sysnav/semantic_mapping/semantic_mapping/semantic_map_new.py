@@ -1,7 +1,12 @@
 import cv2
 import numpy as np
 import open3d as o3d
-from pytorch3d.ops import box3d_overlap
+try:
+    # nevla-vln: imported but unused here, and pytorch3d is hard to install
+    # (needs a source build matching torch/CUDA). Guard so it isn't required.
+    from pytorch3d.ops import box3d_overlap
+except ModuleNotFoundError:
+    box3d_overlap = None
 from scipy.spatial import cKDTree
 from sklearn.cluster import DBSCAN
 from scipy.spatial.transform import Rotation

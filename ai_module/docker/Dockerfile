@@ -32,6 +32,21 @@ RUN apt-get update \
     && python3 -m pip install --no-cache-dir --break-system-packages \
          "git+https://github.com/ultralytics/CLIP.git" \
     && rm -rf /var/lib/apt/lists/*
+# All remaining perception deps in one shot (so we stop iterating one-by-one).
+# Enumerated from every third-party import in the semantic_mapping package:
+#   lapx          -> provides the 'lap' module for the botsort/bytetrack tracker
+#                    used by detection_node .track()                  [A1]
+#   shapely, pillow, open3d, scikit-learn, line_profiler
+#                 -> top-level imports in semantic_map_new / _node /
+#                    single_object_new / cloud_image_fusion            [A2]
+# (captioner + rerun are optional/guarded or off the node path; pytorch3d is
+#  guarded in semantic_map_new.py since box3d_overlap is unused.)
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
+      lapx shapely pillow open3d scikit-learn line_profiler
+# SAM2 (facebookresearch) — its own layer, CUDA extension disabled so it installs
+# without nvcc/build matching (runs fine without the optional kernels).
+RUN SAM2_BUILD_CUDA=0 python3 -m pip install --no-cache-dir --break-system-packages \
+      "git+https://github.com/facebookresearch/sam2.git"
 USER docker
 
 # ---------------------------------------------------------------------------
