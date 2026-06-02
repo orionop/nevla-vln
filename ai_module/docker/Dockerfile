@@ -52,6 +52,11 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages --ignore-insta
 # without nvcc/build matching (runs fine without the optional kernels).
 RUN SAM2_BUILD_CUDA=0 python3 -m pip install --no-cache-dir --break-system-packages \
       "git+https://github.com/facebookresearch/sam2.git"
+# colcon --symlink-install builds ament_python packages via `setup.py develop`,
+# which setuptools>=80 removed (our deps pulled a newer setuptools) ->
+# "option --editable not recognized". Pin <80 so symlink-install works.
+RUN python3 -m pip install --no-cache-dir --break-system-packages --ignore-installed \
+      "setuptools<80"
 USER docker
 
 # ---------------------------------------------------------------------------
