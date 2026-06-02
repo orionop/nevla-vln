@@ -73,8 +73,17 @@ class VLNOrchestrator(Node):
             QType.INSTRUCTION_FOLLOWING: InstructionFollowingHandler(self),
         }
 
-        self._answered = False  # one question per launch
-        self.get_logger().info("VLN Orchestrator ready; awaiting /challenge_question...")
+        # one_shot=True (eval-faithful): answer one question per launch, then
+        # ignore the rest (the eval relaunches per question and re-publishes the
+        # same question at 1 Hz). Set one_shot:=false for dev convenience to
+        # answer each NEW question in a single session without relaunching.
+        self.one_shot = bool(self.declare_parameter("one_shot", True).value)
+        self._answered = False
+        self._last_question = None  # dedupe 1 Hz repeats of the same question
+        self.get_logger().info(
+            f"VLN Orchestrator ready (one_shot={self.one_shot}); "
+            "awaiting /challenge_question..."
+        )
 
     # ------------------------------------------------------------------ #
     # Perception wiring
@@ -116,8 +125,13 @@ class VLNOrchestrator(Node):
 
     def _on_question(self, msg: String) -> None:
         question = msg.data.strip()
-        if not question or self._answered:
+        if not question:
             return
+        if question == self._last_question:   # ignore 1 Hz repeats of the same Q
+            return
+        if self.one_shot and self._answered:   # eval-faithful: one Q per launch
+            return
+        self._last_question = question
         qtype = classify(question)
         self.get_logger().info(f"Question [{qtype.value}]: {question}")
         try:
