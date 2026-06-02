@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>tare_planner</name>
+  <version>0.1.0</version>
+  <description>
+    Message-only package providing the SysNav semantic-map / perception
+    interfaces (ObjectNode, ObjectNodeList, DetectionResult, ...) needed inside
+    the ai_module container so the vendored SysNav perception nodes and our
+    vln_orchestrator can share these types. Msgs only — NOT the base autonomy
+    stack's tare_planner exploration planner (which lives in the system
+    container and ships without these object messages). Definitions vendored
+    from SysNav (BSD-3, Haokun Zhu). These object topics stay within the
+    ai_module container, so there is no cross-container type collision with the
+    base tare_planner.
+  </description>
+  <maintainer email="anuragshetye@gmail.com">Anurag</maintainer>
+  <license>BSD-3-Clause</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,9 +1,12 @@
 FROM zhangjicmu/ubuntu24_ros:ai_module
 
 # Copy our AI-module sources into the existing workspace.
-# dummy_vlm is kept for reference/fallback; vln_orchestrator is our entry.
+# dummy_vlm is kept for reference/fallback; vln_orchestrator is our entry;
+# tare_planner is a msgs-only package providing the semantic-map interfaces
+# (ObjectNodeList, ...) shared by the perception nodes and the orchestrator.
 COPY src/dummy_vlm /home/docker/ai_module/src/dummy_vlm
 COPY src/vln_orchestrator /home/docker/ai_module/src/vln_orchestrator
+COPY src/tare_planner /home/docker/ai_module/src/tare_planner
 
 # VLM client dependencies for the live Gemini/Qwen path (lazy-imported by
 # reasoning/vlm_client.py; only needed when an API key is present). The base
@@ -28,7 +31,7 @@ RUN /bin/bash -c "\
     source /opt/ros/jazzy/setup.bash && \
     colcon build \
       --cmake-args -DCMAKE_BUILD_TYPE=Release \
-      --packages-select dummy_vlm vln_orchestrator"
+      --packages-select tare_planner dummy_vlm vln_orchestrator"
 
 # Ensure the updated install is sourced in every new shell
 RUN echo "source /home/docker/ai_module/install/setup.bash" >> /home/docker/.bashrc
