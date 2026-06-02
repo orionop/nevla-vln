@@ -129,19 +129,100 @@ ros2 topic pub --once /challenge_question std_msgs/msg/String "{data: 'Find the 
 ros2 topic pub --once /challenge_question std_msgs/msg/String "{data: 'Go to the stool and stop at the table'}"
 ```
 
-**Expected (this stage):** T2 classifies each question, decomposes via Gemini,
-logs `perception: … fallback mode`, and publishes on the right topic
-(`/numerical_response`, `/selected_object_marker`, `/way_point_with_heading`).
-Fallback mode is expected until SysNav perception is wired (next phase).
+**Expected (this stage):** T2 classifies each question, decomposes it (via Gemini
+if `GEMINI_API_KEY` is exported in that shell, else a rule-based heuristic), and
+publishes on the right topic (`/numerical_response`, `/selected_object_marker`,
+`/way_point_with_heading`). On the current image the startup log reads
+`perception: subscribed to /object_nodes_list.` (the message package is built),
+but the handlers still emit **fallback** answers because nothing publishes that
+topic yet — that goes live in Section 5.2.
 
 ## Output contract (must not change)
 - `/numerical_response` — `std_msgs/Int32`
 - `/selected_object_marker` — `visualization_msgs/Marker` (CUBE)
 - `/way_point_with_heading` — `geometry_msgs/Pose2D`
 
-## Next phase — perception (see PERCEPTION.md)
-Stand up SysNav detection + semantic_mapping so `/object_nodes_list` goes live;
-the orchestrator then auto-subscribes and the handlers use the real semantic map.
+## 5. Perception (Track B) — bring the semantic map live
+
+Goal: run SysNav's detection + 3D semantic mapping so `/object_nodes_list` is
+populated, and the handlers answer from the **real map** (counts, object boxes,
+located landmarks) instead of fallbacks. The orchestrator already subscribes
+conditionally — once a publisher exists it uses it automatically, no code change.
+Design + remaining gaps: see `PERCEPTION.md`.
+
+Models (from the Colab sizing): **`yolov8x-worldv2` + `sam2.1_b` @ imgsz 960**,
+detector prompted with our `config/challenge_classes.yaml`. Combined ≈ 2.3 GB —
+fits 6 GB with the sim; latency (not VRAM) is the constraint.
+
+### 5.1 Message interfaces — ✅ in the image
+`tare_planner` msgs (`ObjectNodeList`, …) build with the image. After `git pull` +
+rebuild, verify the type resolves and the orchestrator subscribes:
+
+```bash
+# T2 — orchestrator
+docker exec -it iros2026_ai_module bash
+ros2 launch vln_orchestrator vln_orchestrator.launch.py
+#   expect log:  perception: subscribed to /object_nodes_list.
+```
+```bash
+# new terminal — confirm the message type is built
+docker exec -it iros2026_ai_module bash
+ros2 topic info /object_nodes_list
+#   expect:  Type: tare_planner/msg/ObjectNodeList
+```
+Handlers still fall back here (no publisher yet) — that is correct for 5.1.
+
+### 5.2 Detection + semantic mapping — 🔜 next (large, one-time rebuild)
+Adds the publisher. The image gains heavy deps (**torch, ultralytics/YOLO-World,
+SAM2, open3d, scipy**) and builds SysNav's `detection_node` + `semantic_mapping`,
+so the first `--build` is **slow** and the first launch **downloads model
+weights** (YOLO-World + SAM2) once.
+
+> Commands below are the **intended run layout**; the exact launch file/args are
+> finalized when 5.2 lands (this section is updated then).
+
+Run it as **4 terminals**:
+
+```bash
+# T1 — simulator + autonomy stack
+docker exec -it iros2026_system bash
+/home/docker/autonomy_stack_mecanum_wheel_platform/system_simulation.sh
+```
+```bash
+# T2 — perception: detection + 3D semantic mapping (loads YOLO-World + SAM2,
+#      detector prompted with challenge_classes.yaml; publishes /object_nodes_list)
+docker exec -it iros2026_ai_module bash
+ros2 launch semantic_mapping semantic_mapping_sim.launch
+```
+```bash
+# T3 — orchestrator (export the key for VLM decomposition + attribute verification)
+docker exec -it iros2026_ai_module bash
+export GEMINI_API_KEY=<your_key>
+ros2 launch vln_orchestrator vln_orchestrator.launch.py one_shot:=false
+#   as objects are seen, handlers switch from fallback to the real map
+```
+```bash
+# T4 — ask a question, then read the answer
+docker exec -it iros2026_ai_module bash
+ros2 topic pub --once /challenge_question std_msgs/msg/String "{data: 'How many pillows are on the bed'}"
+ros2 topic echo /numerical_response --once
+```
+
+While it runs, watch (each in its own terminal):
+```bash
+ros2 topic echo /object_nodes_list --once     # is the map populating? (nodes[] non-empty)
+watch -n2 nvidia-smi                           # GPU mem < ~6 GB; note temps
+ros2 topic hz /object_nodes_list               # map update rate
+```
+
+**What "live" looks like:**
+- numerical → a real count from the map (not the fallback `2`)
+- object-ref → marker on the matched object's box (not a box at the vehicle)
+- instruction → waypoints at located landmarks (not "hold position")
+
+**If it OOMs or lags** (see Troubleshooting): drop SAM2 → `sam2.1_s`, imgsz → 640,
+or run perception without the sim at full res. Exploration must also finish
+within the **10-min/question** budget — watch end-to-end latency.
 
 ## Troubleshooting
 - **`nvidia-smi` fails / "couldn't communicate with the NVIDIA driver"** → no host
