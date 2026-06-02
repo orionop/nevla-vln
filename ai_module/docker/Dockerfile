@@ -1,37 +1,52 @@
 FROM zhangjicmu/ubuntu24_ros:ai_module
 
-# Copy our AI-module sources into the existing workspace.
-# dummy_vlm is kept for reference/fallback; vln_orchestrator is our entry;
-# tare_planner is a msgs-only package providing the semantic-map interfaces
-# (ObjectNodeList, ...) shared by the perception nodes and the orchestrator.
-COPY src/dummy_vlm /home/docker/ai_module/src/dummy_vlm
-COPY src/vln_orchestrator /home/docker/ai_module/src/vln_orchestrator
-COPY src/tare_planner /home/docker/ai_module/src/tare_planner
-
-# VLM client dependencies for the live Gemini/Qwen path (lazy-imported by
-# reasoning/vlm_client.py; only needed when an API key is present). The base
-# image's system python3 has no pip, so install pip (as root) then the SDKs
-# system-wide; --break-system-packages satisfies PEP 668 on Ubuntu 24. cv2
-# (image verification) is already in the perception image. Switch back to the
-# 'docker' user afterwards so the runtime user is unchanged.
+# ---------------------------------------------------------------------------
+# Python dependencies (heavy). Kept BEFORE the source COPY so editing our code
+# does NOT re-trigger the multi-GB download (Docker layer cache). Installed
+# system-wide as root with --break-system-packages (PEP 668, Ubuntu 24).
+#   - openai/pydantic : VLM client (Gemini path)
+#   - torch/torchvision/ultralytics/supervision : perception A1 (detection_node).
+#     torch pulls the CUDA build from PyPI; verify torch.cuda.is_available() on
+#     the box. (SAM2 + open3d + scikit-learn + line_profiler come in A2.)
+# ---------------------------------------------------------------------------
 USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3-pip \
-    && python3 -m pip install --no-cache-dir --break-system-packages \
-         "openai>=1.40" "pydantic>=2" \
     && rm -rf /var/lib/apt/lists/*
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
+      "openai>=1.40" "pydantic>=2" \
+      torch torchvision ultralytics supervision
 USER docker
 
-# Build both packages against the already-built workspace dependencies.
-# vln_orchestrator is pure-Python (rclpy + std/geometry/visualization msgs);
-# its VLM dependencies (openai, pydantic, cv2) are imported lazily and only
-# needed once the live VLM path is wired, so they are not required to build.
+# ---------------------------------------------------------------------------
+# Sources (change often -> after the dep layer).
+#   dummy_vlm        : reference/fallback
+#   vln_orchestrator : our entry node
+#   tare_planner     : msgs-only (ObjectNodeList, ...) shared by perception + us
+#   semantic_mapping : SysNav perception (detection_node + semantic_mapping_node),
+#                      vendored + adapted (.pt detector instead of TensorRT engine)
+# ---------------------------------------------------------------------------
+COPY src/dummy_vlm /home/docker/ai_module/src/dummy_vlm
+COPY src/vln_orchestrator /home/docker/ai_module/src/vln_orchestrator
+COPY src/tare_planner /home/docker/ai_module/src/tare_planner
+COPY vendor/sysnav/semantic_mapping /home/docker/ai_module/src/semantic_mapping
+
+# Use our mined challenge vocabulary as the detector's default object_file
+# (detection_node reads CONFIG_DIR/config/objects.yaml).
+COPY src/vln_orchestrator/config/challenge_classes.yaml \
+     /home/docker/ai_module/src/semantic_mapping/semantic_mapping/config/objects.yaml
+
+# ---------------------------------------------------------------------------
+# Build. --symlink-install so semantic_mapping's CONFIG_DIR (= __file__.parent)
+# resolves config/objects.yaml + config/botsort.yaml from the source tree at
+# runtime (plain install would not place config/ next to the module).
+# ---------------------------------------------------------------------------
 WORKDIR /home/docker/ai_module
 RUN /bin/bash -c "\
     source /opt/ros/jazzy/setup.bash && \
-    colcon build \
+    colcon build --symlink-install \
       --cmake-args -DCMAKE_BUILD_TYPE=Release \
-      --packages-select tare_planner dummy_vlm vln_orchestrator"
+      --packages-select tare_planner dummy_vlm vln_orchestrator semantic_mapping"
 
 # Ensure the updated install is sourced in every new shell
 RUN echo "source /home/docker/ai_module/install/setup.bash" >> /home/docker/.bashrc

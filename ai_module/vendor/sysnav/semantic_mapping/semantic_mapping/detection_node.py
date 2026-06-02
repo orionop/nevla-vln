@@ -49,6 +49,11 @@ class DetectNode(Node):
         self.declare_parameter('device', device)
         self.declare_parameter('annotate_image', True)
         self.declare_parameter('object_file', str(self.CONFIG_DIR / 'config' / 'objects.yaml'))
+        # nevla-vln: open-vocab detector model (a .pt name auto-downloads via
+        # ultralytics). We use YOLO-World instead of SysNav's prebuilt TensorRT
+        # engine (engines are GPU-specific and not shipped). Boxes only — SAM2
+        # provides masks downstream.
+        self.declare_parameter('model', 'yolov8x-worldv2.pt')
 
         self.platform = self.get_parameter('platform').get_parameter_value().string_value
         self.ANNOTATE = self.get_parameter('annotate_image').get_parameter_value().bool_value
@@ -65,9 +70,13 @@ class DetectNode(Node):
         self.text_prompt_list = np.array(self.text_prompt_list)
         print(f"Text prompt: {self.text_prompt}")
 
-        self.grounding_model = YOLO(self.CONFIG_DIR / "external/yolov8x-worldv2_cus.engine", task='detect')
-        # self.grounding_model = YOLOE(self.CONFIG_DIR / "external/yoloe-11l-seg.engine", task="segment")
-        self.grounding_model = YOLOE(self.CONFIG_DIR / "external/yoloe-26x-seg.engine", task="segment")
+        # nevla-vln: load YOLO-World (.pt) and prompt it with our vocabulary,
+        # instead of SysNav's prebuilt TensorRT engines (kept for reference):
+        #   self.grounding_model = YOLO(self.CONFIG_DIR / "external/yolov8x-worldv2_cus.engine", task='detect')
+        #   self.grounding_model = YOLOE(self.CONFIG_DIR / "external/yoloe-26x-seg.engine", task="segment")
+        model_name = self.get_parameter('model').get_parameter_value().string_value
+        self.grounding_model = YOLOWorld(model_name)
+        self.grounding_model.set_classes(list(self.text_prompt_list))
 
         self.device = device
 
