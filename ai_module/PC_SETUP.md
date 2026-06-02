@@ -65,14 +65,14 @@ sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart doc
 ## 1. Clone (private repo → authenticate once)
 
 ```bash
-mkdir -p ~/Desktop/anurag_vla && cd ~/Desktop/anurag_vla
+cd ~                     # clone into the home dir -> /home/swarnav/nevla-vln
 
 # browser auth (install gh if missing: sudo apt install -y gh)
 gh auth login            # GitHub.com -> HTTPS -> login via browser
 gh auth setup-git
 
 git clone --recurse-submodules https://github.com/orionop/nevla-vln.git
-cd nevla-vln
+cd ~/nevla-vln
 ```
 
 Alternative without `gh` (use a Personal Access Token):
@@ -84,7 +84,7 @@ HTTPS automatically (`.gitmodules` is HTTPS).
 ## 2. Create `.env` (local secrets, gitignored)
 
 ```bash
-cd ~/Desktop/anurag_vla/nevla-vln
+cd ~/nevla-vln
 cat > .env <<'EOF'
 GEMINI_API_KEY=<YOUR_GEMINI_KEY>
 DASHSCOPE_API_KEY=
@@ -99,7 +99,7 @@ The orchestrator auto-loads `.env` at runtime (`reasoning/vlm_client.py`) — no
 
 ```bash
 xhost +
-cd ~/Desktop/anurag_vla/nevla-vln/docker
+cd ~/nevla-vln/docker
 docker compose -f compose_gpu.yml up --build -d
 docker compose -f compose_gpu.yml ps           # iros2026_system + iros2026_ai_module up
 ```
