@@ -28,6 +28,7 @@ import math
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import ExternalShutdownException
 
 from std_msgs.msg import String, Int32
 from nav_msgs.msg import Odometry
@@ -196,13 +197,19 @@ def main(args=None) -> None:
     node = VLNOrchestrator()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception as e:
+        # On SIGINT, rclpy's executor can raise mid-spin while taking a message
+        # (a known shutdown race -> RuntimeError "Unable to convert call
+        # argument"). Per-question handler errors are already caught in
+        # _on_question, so spin-level exceptions are shutdown/transport races:
+        # log and exit cleanly rather than dying with a traceback (exit 1).
+        node.get_logger().info(f"shutting down ({type(e).__name__})")
     finally:
         node.destroy_node()
-        # On SIGINT, rclpy's signal handler may have already shut down the
-        # context; calling shutdown() again raises RCLError. Guard it so the
-        # process exits cleanly (0) instead of dying with a traceback.
+        # The signal handler may have already shut the context down; guard so a
+        # second shutdown() doesn't raise. Exit clean (0).
         if rclpy.ok():
             rclpy.shutdown()
 
