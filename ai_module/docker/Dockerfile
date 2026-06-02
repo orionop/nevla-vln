@@ -13,7 +13,15 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3-pip \
     && rm -rf /var/lib/apt/lists/*
+# The base image's numpy is debian-managed (no pip RECORD), so pip cannot
+# uninstall it when a dep wants a different version -> "Cannot uninstall numpy".
+# Install a pip-managed numpy FIRST (--ignore-installed shadows the debian one),
+# pinned to 1.26.x so the debian-built cv2/cv_bridge keep their numpy-1.x ABI.
 RUN python3 -m pip install --no-cache-dir --break-system-packages \
+      --ignore-installed "numpy==1.26.4"
+# Then the rest, holding numpy at 1.26.4 so torch/ultralytics don't try to move it.
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
+      "numpy==1.26.4" \
       "openai>=1.40" "pydantic>=2" \
       torch torchvision ultralytics supervision
 USER docker
