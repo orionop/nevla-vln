@@ -24,6 +24,14 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages \
       "numpy==1.26.4" \
       "openai>=1.40" "pydantic>=2" \
       torch torchvision ultralytics supervision
+# YOLO-World's open-vocab set_classes() needs CLIP (text encoder). ultralytics
+# uses its own CLIP fork; install it in a SEPARATE layer (after torch) so the
+# cached torch layer is not invalidated. git is required for the VCS install.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && python3 -m pip install --no-cache-dir --break-system-packages \
+         "git+https://github.com/ultralytics/CLIP.git" \
+    && rm -rf /var/lib/apt/lists/*
 USER docker
 
 # ---------------------------------------------------------------------------
