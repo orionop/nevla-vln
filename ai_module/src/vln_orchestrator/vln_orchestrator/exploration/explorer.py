@@ -64,12 +64,14 @@ class ExplorationController:
         ]
 
     def next_goal(self, cur_x: float, cur_y: float):
-        """Head toward the MOST unexplored frontier (farthest from everything
-        visited), clamped to max_step; None if no frontier remains (covered)."""
+        """Head to the NEAREST unexplored frontier (classic frontier exploration:
+        covers the area systematically from the start rather than beelining to a
+        far point and wandering out of the room). Clamped to max_step; None if no
+        frontier remains (covered)."""
         frontiers = self._frontiers()
         if not frontiers:
             return None
-        gx, gy = max(frontiers, key=lambda p: self._min_dist(p, self.visited))
+        gx, gy = min(frontiers, key=lambda p: math.hypot(p[0] - cur_x, p[1] - cur_y))
         d = math.hypot(gx - cur_x, gy - cur_y)
         if d > self.max_step:
             s = self.max_step / d
