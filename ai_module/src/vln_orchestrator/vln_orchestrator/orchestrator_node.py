@@ -34,11 +34,13 @@ from std_msgs.msg import String, Int32
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose2D
 from visualization_msgs.msg import Marker
+from sensor_msgs.msg import PointCloud2
 
 from vln_orchestrator.question_router import QType, classify
 from vln_orchestrator.handlers.numerical import NumericalHandler
 from vln_orchestrator.handlers.object_reference import ObjectReferenceHandler
 from vln_orchestrator.handlers.instruction_following import InstructionFollowingHandler
+from vln_orchestrator.exploration.explorer import ExplorationController
 
 
 class VLNOrchestrator(Node):
@@ -58,8 +60,8 @@ class VLNOrchestrator(Node):
         self.vehicle_x = 0.0
         self.vehicle_y = 0.0
 
-        # --- instruction-following waypoint streaming ---
-        self.REACH_DIST = 1.0                 # m; advance to next waypoint within this
+        # --- waypoint streaming (instruction-following path + explore goals) ---
+        self.REACH_DIST = float(self.declare_parameter("waypoint_reach_dist", 1.0).value)
         self._wp_queue: list[tuple[float, float]] = []
 
         # --- perception (semantic map), wired only if SysNav is built ---
@@ -73,10 +75,32 @@ class VLNOrchestrator(Node):
             QType.INSTRUCTION_FOLLOWING: InstructionFollowingHandler(self),
         }
 
-        # one_shot=True (eval-faithful): answer one question per launch, then
-        # ignore the rest (the eval relaunches per question and re-publishes the
-        # same question at 1 Hz). Set one_shot:=false for dev convenience to
-        # answer each NEW question in a single session without relaunching.
+        # --- exploration: drive the scene to build the map BEFORE answering ---
+        # 10-min/question budget; leave margin to answer + earn the time bonus.
+        self._answer_deadline_s = float(self.declare_parameter("answer_deadline_s", 540.0).value)
+        self._explore_budget_s = float(self.declare_parameter("explore_budget_s", 420.0).value)
+        self._convergence_timeout_s = float(self.declare_parameter("convergence_timeout_s", 20.0).value)
+        self._min_explore_s = float(self.declare_parameter("min_explore_s", 15.0).value)
+        self._terrain_subsample = int(self.declare_parameter("terrain_subsample", 5).value)
+        self._explorer = ExplorationController(
+            frontier_clearance=float(self.declare_parameter("frontier_clearance", 2.0).value),
+            max_step=float(self.declare_parameter("explore_step", 4.0).value),
+        )
+        self.create_subscription(PointCloud2, "/terrain_map", self._on_terrain, 5)
+        self._phase = "idle"          # idle -> explore -> done
+        self._question = None
+        self._qtype = None
+        self._explore_start = 0.0
+        self._last_obj_count = 0
+        self._last_growth_s = 0.0
+        self.create_timer(
+            float(self.declare_parameter("explore_tick_s", 1.0).value),
+            self._explore_tick,
+        )
+
+        # one_shot=True (eval-faithful): handle one question per launch; the eval
+        # relaunches per question and re-publishes it at 1 Hz. one_shot:=false for
+        # dev to handle each NEW question in one session.
         self.one_shot = bool(self.declare_parameter("one_shot", True).value)
         self._answered = False
         self._last_question = None  # dedupe 1 Hz repeats of the same question
@@ -132,14 +156,78 @@ class VLNOrchestrator(Node):
         if self.one_shot and self._answered:   # eval-faithful: one Q per launch
             return
         self._last_question = question
-        qtype = classify(question)
-        self.get_logger().info(f"Question [{qtype.value}]: {question}")
+        self._answered = True            # accept this question; ignore repeats
+        self._question = question
+        self._qtype = classify(question)
+        now = self._now_s()
+        self._explore_start = now
+        self._last_growth_s = now
+        self._phase = "explore"          # drive the scene; answer in _explore_tick
+        self.get_logger().info(
+            f"Question [{self._qtype.value}]: {question} -> exploring"
+        )
+
+    # ------------------------------------------------------------------ #
+    # Exploration phase machine
+    # ------------------------------------------------------------------ #
+    def _on_terrain(self, msg: PointCloud2) -> None:
+        """Latest traversable area -> explorer frontiers (subsampled for speed)."""
         try:
-            self._handlers[qtype].handle(question)
-        except Exception as e:  # never crash; always try to emit something
-            self.get_logger().error(f"Handler {qtype.value} failed: {e}")
-            self._handlers[qtype].fallback(question)
-        self._answered = True
+            from sensor_msgs_py import point_cloud2
+        except Exception:
+            return
+        pts = []
+        for i, p in enumerate(point_cloud2.read_points(
+                msg, field_names=("x", "y"), skip_nans=True)):
+            if i % self._terrain_subsample == 0:
+                pts.append((float(p[0]), float(p[1])))
+        self._explorer.set_terrain(pts)
+
+    def _explore_tick(self) -> None:
+        if self._phase != "explore":
+            return
+        now = self._now_s()
+        self._explorer.mark_visited(self.vehicle_x, self.vehicle_y)
+
+        # track semantic-map growth (for the convergence criterion)
+        if self.semantic_map is not None:
+            n = len(self.semantic_map)
+            if n > self._last_obj_count:
+                self._last_obj_count = n
+                self._last_growth_s = now
+
+        elapsed = now - self._explore_start
+        if elapsed >= self._answer_deadline_s:
+            self._do_answer("deadline", elapsed); return
+        if elapsed >= self._explore_budget_s:
+            self._do_answer("budget", elapsed); return
+        covered = self._explorer.is_covered(self.vehicle_x, self.vehicle_y)
+        stable = (now - self._last_growth_s) >= self._convergence_timeout_s
+        if covered and stable and elapsed >= self._min_explore_s:
+            self._do_answer("converged", elapsed); return
+
+        # keep exploring: when the current goal is reached (queue empty), stream
+        # the next frontier (reuses the arrival-advance machinery in _on_pose)
+        if not self._wp_queue:
+            goal = self._explorer.next_goal(self.vehicle_x, self.vehicle_y)
+            if goal is not None:
+                self.stream_waypoints([goal])
+
+    def _do_answer(self, reason: str, elapsed: float) -> None:
+        self._phase = "done"
+        self._wp_queue = []   # stop exploration driving before the handler acts
+        self.get_logger().info(
+            f"exploration {reason} after {elapsed:.0f}s "
+            f"({self._last_obj_count} objects mapped); answering"
+        )
+        try:
+            self._handlers[self._qtype].handle(self._question)
+        except Exception as e:  # never crash; always emit something
+            self.get_logger().error(f"handler {self._qtype.value} failed: {e}")
+            self._handlers[self._qtype].fallback(self._question)
+
+    def _now_s(self) -> float:
+        return self.get_clock().now().nanoseconds / 1e9
 
     # ------------------------------------------------------------------ #
     # Publish helpers (used by handlers)

@@ -54,6 +54,7 @@ To swap it in for the dummy in the system startup script, replace the
 | Object-reference handler | ✅ resolves via map + VLM attribute verification |
 | Numerical handler | ✅ counts over map instances |
 | Instruction-following handler | 🟡 locates landmarks + streams waypoints; ⬜ route planner (avoid/via) |
+| Exploration (`exploration/`) | ✅ explore→answer phase machine; frontier waypoints from /terrain_map |
 
 The orchestrator now consumes a semantic map: it subscribes to `/object_nodes_list`
 only if SysNav's `tare_planner/ObjectNodeList` message is built (GPU box), else it
