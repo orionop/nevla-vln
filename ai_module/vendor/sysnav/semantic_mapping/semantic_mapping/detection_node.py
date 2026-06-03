@@ -181,6 +181,7 @@ class DetectNode(Node):
         detections = self.inference(image)
         detection_time = time.time()
 
+        image_anno = None   # only built when annotation is enabled
         if self.ANNOTATE:
             image_anno = image.copy()
 
@@ -231,10 +232,11 @@ class DetectNode(Node):
         # self.log_info(f'Publishing {len(detection_result_msg.track_id)} detections at {detection_stamp:.2f} seconds.')
         self.detection_result_pub.publish(detection_result_msg)
 
-        annotated_image_msg = self.bridge.cv2_to_imgmsg(image_anno, encoding='bgr8')
-        annotated_image_msg.header.stamp = Time(seconds=seconds, nanoseconds=nanoseconds).to_msg()
-        annotated_image_msg.header.frame_id = 'map'
-        self.annotated_image_pub.publish(annotated_image_msg)
+        if image_anno is not None:
+            annotated_image_msg = self.bridge.cv2_to_imgmsg(image_anno, encoding='bgr8')
+            annotated_image_msg.header.stamp = Time(seconds=seconds, nanoseconds=nanoseconds).to_msg()
+            annotated_image_msg.header.frame_id = 'map'
+            self.annotated_image_pub.publish(annotated_image_msg)
 
 
 
