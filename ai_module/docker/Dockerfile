@@ -47,7 +47,7 @@ RUN apt-get update \
 # uninstalling anything. numpy stays pinned at 1.26.4 (cv2 ABI). None of these
 # depend on torch, so torch is NOT reinstalled.
 RUN python3 -m pip install --no-cache-dir --break-system-packages --ignore-installed \
-      "numpy==1.26.4" lapx shapely pillow open3d scikit-learn line_profiler
+      "numpy==1.26.4" lapx shapely pillow open3d scikit-learn line_profiler rerun-sdk
 # SAM2 (facebookresearch) — its own layer, CUDA extension disabled so it installs
 # without nvcc/build matching (runs fine without the optional kernels).
 RUN SAM2_BUILD_CUDA=0 python3 -m pip install --no-cache-dir --break-system-packages \
