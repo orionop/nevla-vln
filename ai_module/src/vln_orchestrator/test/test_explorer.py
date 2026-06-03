@@ -24,14 +24,24 @@ def test_no_terrain_not_covered():
     print("✓ no terrain -> not covered (won't answer prematurely)")
 
 
-def test_nearest_frontier():
+def test_most_unexplored_frontier():
     e = ExplorationController(frontier_clearance=2.0, max_step=100.0)
     e.set_terrain([(3.0, 0.0), (10.0, 0.0), (-8.0, 0.0)])
     e.mark_visited(0.0, 0.0)            # only the origin visited
     g = e.next_goal(0.0, 0.0)
-    # all three are > 2 m from origin; nearest to current pose is (3,0)
-    assert g is not None and abs(g[0] - 3.0) < 1e-6 and abs(g[1]) < 1e-6
-    print("✓ picks nearest unexplored frontier")
+    # heads to the MOST unexplored (farthest from visited) -> (10,0)
+    assert g is not None and abs(g[0] - 10.0) < 1e-6 and abs(g[1]) < 1e-6
+    print("✓ picks most-unexplored frontier (spreads across the scene)")
+
+
+def test_blocked_frontier_excluded():
+    e = ExplorationController(frontier_clearance=2.0, max_step=100.0, blocked_clearance=3.0)
+    e.set_terrain([(10.0, 0.0), (0.0, 10.0)])
+    e.mark_visited(0.0, 0.0)
+    assert e.next_goal(0.0, 0.0) == (10.0, 0.0)   # farthest-ish, tie broken by max()
+    e.mark_blocked(10.0, 0.0)                     # unreachable -> exclude it
+    assert e.next_goal(0.0, 0.0) == (0.0, 10.0)   # re-routes to the other frontier
+    print("✓ blocked frontier excluded -> re-routes")
 
 
 def test_clamp_to_max_step():
@@ -77,7 +87,8 @@ def test_visited_dedup():
 
 if __name__ == "__main__":
     test_no_terrain_not_covered()
-    test_nearest_frontier()
+    test_most_unexplored_frontier()
+    test_blocked_frontier_excluded()
     test_clamp_to_max_step()
     test_covered_when_all_visited()
     test_frontier_appears_with_new_terrain()

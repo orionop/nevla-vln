@@ -13,6 +13,9 @@ vln_orchestrator:
     convergence_timeout_s: 20.0
     # never answer-on-convergence before this much exploration has happened.
     min_explore_s: 15.0
+    # abandon a frontier the robot can't reach within this long (mark it blocked,
+    # re-route). Stops the robot getting stuck on one corner.
+    goal_timeout_s: 12.0
     # explore loop period (s).
     explore_tick_s: 1.0
     # a terrain point is an unexplored frontier if >= this far from every visited

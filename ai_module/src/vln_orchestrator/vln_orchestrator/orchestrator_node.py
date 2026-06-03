@@ -81,6 +81,8 @@ class VLNOrchestrator(Node):
         self._explore_budget_s = float(self.declare_parameter("explore_budget_s", 420.0).value)
         self._convergence_timeout_s = float(self.declare_parameter("convergence_timeout_s", 20.0).value)
         self._min_explore_s = float(self.declare_parameter("min_explore_s", 15.0).value)
+        # abandon a frontier we can't reach within this long, mark it blocked, re-route
+        self._goal_timeout_s = float(self.declare_parameter("goal_timeout_s", 12.0).value)
         self._terrain_subsample = int(self.declare_parameter("terrain_subsample", 5).value)
         self._explorer = ExplorationController(
             frontier_clearance=float(self.declare_parameter("frontier_clearance", 2.0).value),
@@ -91,6 +93,7 @@ class VLNOrchestrator(Node):
         self._question = None
         self._qtype = None
         self._explore_start = 0.0
+        self._goal_time = 0.0         # when the current explore goal was issued
         self._last_obj_count = 0
         self._last_growth_s = 0.0
         self.create_timer(
@@ -206,12 +209,21 @@ class VLNOrchestrator(Node):
         if covered and stable and elapsed >= self._min_explore_s:
             self._do_answer("converged", elapsed); return
 
-        # keep exploring: when the current goal is reached (queue empty), stream
-        # the next frontier (reuses the arrival-advance machinery in _on_pose)
+        # if we've sat on the current goal too long, it's unreachable -> mark it
+        # blocked and drop it so we re-route to a different frontier
+        if self._wp_queue and (now - self._goal_time) >= self._goal_timeout_s:
+            gx, gy = self._wp_queue[0]
+            self._explorer.mark_blocked(gx, gy)
+            self.get_logger().info(f"frontier ({gx:.1f},{gy:.1f}) unreached; re-routing")
+            self._wp_queue = []
+
+        # when no active goal, stream the next frontier (reuses the arrival-advance
+        # machinery in _on_pose)
         if not self._wp_queue:
             goal = self._explorer.next_goal(self.vehicle_x, self.vehicle_y)
             if goal is not None:
                 self.stream_waypoints([goal])
+                self._goal_time = now
 
     def _do_answer(self, reason: str, elapsed: float) -> None:
         self._phase = "done"
