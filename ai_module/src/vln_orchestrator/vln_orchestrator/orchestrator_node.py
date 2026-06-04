@@ -208,9 +208,15 @@ class VLNOrchestrator(Node):
             self._do_answer("deadline", elapsed); return
         if elapsed >= self._explore_budget_s:
             self._do_answer("budget", elapsed); return
-        covered = self._explorer.is_covered(self.vehicle_x, self.vehicle_y)
         stable = (now - self._last_growth_s) >= self._convergence_timeout_s
-        if covered and stable and elapsed >= self._min_explore_s:
+        # external explorer (TARE) drives -> our frontier-coverage check is
+        # meaningless, so converge on map-stability alone. When we drive, also
+        # require the area to look covered.
+        if self._external_exploration:
+            converged = stable
+        else:
+            converged = stable and self._explorer.is_covered(self.vehicle_x, self.vehicle_y)
+        if converged and elapsed >= self._min_explore_s:
             self._do_answer("converged", elapsed); return
 
         # external explorer (e.g. TARE) drives the robot; we just wait + answer
