@@ -56,6 +56,11 @@ class VLNOrchestrator(Node):
         self._marker_pub = self.create_publisher(Marker, "/selected_object_marker", 5)
         self._waypoint_pub = self.create_publisher(Pose2D, "/way_point_with_heading", 5)
 
+        # Bridge the challenge question into SysNav's exploration coordinator
+        # (vlm_node reads the instruction on /keyboard_input, decomposes it, and
+        # tells TARE the target so exploration is target-driven).
+        self._keyboard_pub = self.create_publisher(String, "/keyboard_input", 5)
+
         # --- vehicle state ---
         self.vehicle_x = 0.0
         self.vehicle_y = 0.0
@@ -98,6 +103,7 @@ class VLNOrchestrator(Node):
         self._qtype = None
         self._explore_start = 0.0
         self._goal_time = 0.0         # when the current explore goal was issued
+        self._keyboard_sent_until = 0.0  # re-publish instruction to vlm_node until
         self._last_obj_count = 0
         self._last_growth_s = 0.0
         self.create_timer(
@@ -170,6 +176,11 @@ class VLNOrchestrator(Node):
         self._explore_start = now
         self._last_growth_s = now
         self._phase = "explore"          # drive the scene; answer in _explore_tick
+        # feed the instruction to the exploration coordinator (vlm_node) so TARE
+        # explores toward the question's target. Republished by _explore_tick for
+        # a few seconds in case vlm_node subscribed late.
+        self._keyboard_pub.publish(String(data=question))
+        self._keyboard_sent_until = now + 5.0
         self.get_logger().info(
             f"Question [{self._qtype.value}]: {question} -> exploring"
         )
@@ -194,6 +205,10 @@ class VLNOrchestrator(Node):
         if self._phase != "explore":
             return
         now = self._now_s()
+        # re-publish the instruction to the coordinator for a few seconds (in case
+        # vlm_node subscribed after the first send)
+        if self._question is not None and now < self._keyboard_sent_until:
+            self._keyboard_pub.publish(String(data=self._question))
         self._explorer.mark_visited(self.vehicle_x, self.vehicle_y)
 
         # track semantic-map growth (for the convergence criterion)

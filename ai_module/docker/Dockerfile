@@ -57,19 +57,36 @@ RUN SAM2_BUILD_CUDA=0 python3 -m pip install --no-cache-dir --break-system-packa
 # "option --editable not recognized". Pin <80 so symlink-install works.
 RUN python3 -m pip install --no-cache-dir --break-system-packages --ignore-installed \
       "setuptools<80"
+# C++ build deps for SysNav's tare_planner (exploration planner + room
+# segmentation). From its CMakeLists find_package list: PCL, Eigen, OpenCV,
+# message_filters, cv_bridge, backward_ros, nlohmann_json, glog. (OR-Tools is
+# vendored in the package as a prebuilt .so.) rviz_2d_overlay_msgs is optional
+# (the vlm_node overlay import is guarded) -> install best-effort.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+         libpcl-dev libeigen3-dev libopencv-dev nlohmann-json3-dev \
+         libgoogle-glog-dev \
+         ros-jazzy-pcl-ros ros-jazzy-pcl-conversions \
+         ros-jazzy-message-filters ros-jazzy-cv-bridge \
+         ros-jazzy-backward-ros ros-jazzy-tf2-geometry-msgs \
+    && (apt-get install -y --no-install-recommends ros-jazzy-rviz-2d-overlay-msgs || true) \
+    && rm -rf /var/lib/apt/lists/*
 USER docker
 
 # ---------------------------------------------------------------------------
 # Sources (change often -> after the dep layer).
 #   dummy_vlm        : reference/fallback
-#   vln_orchestrator : our entry node
-#   tare_planner     : msgs-only (ObjectNodeList, ...) shared by perception + us
+#   vln_orchestrator : our entry node (challenge-output answerer)
+#   tare_planner     : SysNav's full exploration planner (C++ + room_segmentation
+#                      + msgs + vendored OR-Tools .so)
+#   vlm_node         : SysNav exploration coordinator (room selection / queries)
 #   semantic_mapping : SysNav perception (detection_node + semantic_mapping_node),
 #                      vendored + adapted (.pt detector instead of TensorRT engine)
 # ---------------------------------------------------------------------------
 COPY src/dummy_vlm /home/docker/ai_module/src/dummy_vlm
 COPY src/vln_orchestrator /home/docker/ai_module/src/vln_orchestrator
 COPY src/tare_planner /home/docker/ai_module/src/tare_planner
+COPY src/vlm_node /home/docker/ai_module/src/vlm_node
 COPY vendor/sysnav/semantic_mapping /home/docker/ai_module/src/semantic_mapping
 
 # Use our mined challenge vocabulary as the detector's default object_file
@@ -87,7 +104,10 @@ RUN /bin/bash -c "\
     source /opt/ros/jazzy/setup.bash && \
     colcon build --symlink-install \
       --cmake-args -DCMAKE_BUILD_TYPE=Release \
-      --packages-select tare_planner dummy_vlm vln_orchestrator semantic_mapping"
+      --packages-select tare_planner dummy_vlm vln_orchestrator vlm_node semantic_mapping"
 
-# Ensure the updated install is sourced in every new shell
-RUN echo "source /home/docker/ai_module/install/setup.bash" >> /home/docker/.bashrc
+# Ensure the updated install is sourced in every new shell, and that the vendored
+# OR-Tools shared lib (linked by tare_planner's tsp_solver) is on the runtime
+# library path.
+RUN echo "source /home/docker/ai_module/install/setup.bash" >> /home/docker/.bashrc \
+    && echo "export LD_LIBRARY_PATH=/home/docker/ai_module/src/tare_planner/or-tools/lib:\$LD_LIBRARY_PATH" >> /home/docker/.bashrc
