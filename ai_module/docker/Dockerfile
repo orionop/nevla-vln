@@ -68,6 +68,7 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages --ignore-insta
 # (the vlm_node overlay import is guarded) -> install best-effort.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+         wget \
          libpcl-dev libeigen3-dev libopencv-dev nlohmann-json3-dev \
          libgoogle-glog-dev \
          ros-jazzy-pcl-ros ros-jazzy-pcl-conversions \
@@ -97,6 +98,16 @@ COPY vendor/sysnav/semantic_mapping /home/docker/ai_module/src/semantic_mapping
 # (detection_node reads CONFIG_DIR/config/objects.yaml).
 COPY src/vln_orchestrator/config/challenge_classes.yaml \
      /home/docker/ai_module/src/semantic_mapping/semantic_mapping/config/objects.yaml
+
+# Bake the SAM2 checkpoint into the image (semantic_mapping_node loads it from
+# this path). Done at build time so it survives container recreation/rebuilds
+# (previously it lived in the container's writable layer and was lost on rebuild).
+USER root
+RUN mkdir -p /home/docker/ai_module/src/semantic_mapping/semantic_mapping/external/sam2/checkpoints \
+    && wget -q -O /home/docker/ai_module/src/semantic_mapping/semantic_mapping/external/sam2/checkpoints/sam2.1_hiera_base_plus.pt \
+         https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_base_plus.pt \
+    && chown -R docker:docker /home/docker/ai_module/src/semantic_mapping/semantic_mapping/external
+USER docker
 
 # ---------------------------------------------------------------------------
 # Build. --symlink-install so semantic_mapping's CONFIG_DIR (= __file__.parent)
