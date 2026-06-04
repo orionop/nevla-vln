@@ -83,6 +83,10 @@ class VLNOrchestrator(Node):
         self._min_explore_s = float(self.declare_parameter("min_explore_s", 15.0).value)
         # abandon a frontier we can't reach within this long, mark it blocked, re-route
         self._goal_timeout_s = float(self.declare_parameter("goal_timeout_s", 12.0).value)
+        # external_exploration=True: something else drives the robot (e.g. TARE in
+        # the system). We then only wait for the map to build and answer; we do NOT
+        # publish exploration waypoints (avoids fighting TARE's /way_point).
+        self._external_exploration = bool(self.declare_parameter("external_exploration", False).value)
         self._terrain_subsample = int(self.declare_parameter("terrain_subsample", 5).value)
         self._explorer = ExplorationController(
             frontier_clearance=float(self.declare_parameter("frontier_clearance", 2.0).value),
@@ -208,6 +212,10 @@ class VLNOrchestrator(Node):
         stable = (now - self._last_growth_s) >= self._convergence_timeout_s
         if covered and stable and elapsed >= self._min_explore_s:
             self._do_answer("converged", elapsed); return
+
+        # external explorer (e.g. TARE) drives the robot; we just wait + answer
+        if self._external_exploration:
+            return
 
         # if we've sat on the current goal too long, it's unreachable -> mark it
         # blocked and drop it so we re-route to a different frontier
