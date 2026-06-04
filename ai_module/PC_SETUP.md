@@ -224,10 +224,82 @@ ros2 topic hz /object_nodes_list               # map update rate
 or run perception without the sim at full res. Exploration must also finish
 within the **10-min/question** budget — watch end-to-end latency.
 
+## 6. Full SysNav semantic exploration (Track B, proper architecture)
+
+The robot must explore the unknown scene before answering. We run SysNav's
+**room-aware semantic exploration** (modified TARE + vlm_node coordinator) inside
+ai_module, driving the **plain** system via `/way_point`. Our orchestrator stays
+the answerer. Key rule learned the hard way: launch everything **once, against one
+clock** — never restart the sim under live perception (resets sim time →
+`Detection older than oldest odom` → fusion dies).
+
+After `git pull`, rebuild (heavy: PCL + the tare_planner C++ + or-tools):
+```bash
+cd ~/nevla-vln && git pull origin main
+cd docker && docker compose -f compose_gpu.yml up --build -d ai_module
+```
+Confirm the new packages built:
+```bash
+docker exec iros2026_ai_module bash -lc "ros2 pkg list | grep -E 'tare_planner|vlm_node'"
+```
+
+### One-command form (eval-faithful)
+```bash
+# T1 — PLAIN system (NOT the with_exploration variant; TARE lives in ai_module)
+docker exec -it iros2026_system bash
+/home/docker/autonomy_stack_mecanum_wheel_platform/system_simulation.sh
+```
+```bash
+# T2 — all ai_module nodes, one coordinated launch (perception first, TARE after a
+#      delay so SAM2 is warm). Export the key for vlm_node + our VLM path.
+docker exec -it iros2026_ai_module bash
+export GEMINI_API_KEY=<your_key>
+ros2 launch vln_orchestrator full_system.launch.py scenario:=indoor
+```
+```bash
+# T3 — ask
+docker exec -it iros2026_ai_module bash
+ros2 topic pub --once /challenge_question std_msgs/msg/String "{data: 'How many chairs are there'}"
+```
+
+### Terminal-by-terminal form (debuggable; use for first bring-up)
+Same as the one-command form but split so each node's output is visible. Bring up
+T1 sim, then detection + semantic_mapping (wait for "started" / SAM2 loaded),
+**then** vlm_node + TARE + room_segmentation, then the orchestrator, then ask:
+```bash
+# T2 detection
+ros2 run semantic_mapping detection_node --ros-args -p annotate_image:=false -p use_sim_time:=true
+# T3 mapping
+ros2 run semantic_mapping semantic_mapping_node --ros-args -p use_sim_time:=true \
+  -p object_file:=/home/docker/ai_module/src/semantic_mapping/semantic_mapping/config/objects.yaml
+# T4 vlm coordinator (after T3 prints "started")
+export GEMINI_API_KEY=<your_key>
+ros2 launch vlm_node vlm_node_sim.launch use_sim_time:=true
+# T5 TARE + room segmentation
+ros2 launch tare_planner explore_world_sim.launch scenario:=indoor &
+ros2 launch tare_planner room_segmentation.launch scenario:=indoor
+# T6 orchestrator
+ros2 run vln_orchestrator orchestrator --ros-args -p external_exploration:=true -p use_sim_time:=true
+# T7 ask (as above)
+```
+
+**What success looks like:** TARE drives the robot **room-aware** (RViz),
+`/object_nodes_list` fills, the orchestrator forwards the question to
+`/keyboard_input` (vlm_node targets exploration), then answers from the full map
+(chairs ≈ ground truth, not 0/partial). No `Detection older than oldest odom`.
+
+**Tuning if needed:** `scenario:=` (indoor/matterport_sim), `explore_delay_s:=`
+(SAM2 warm-up), and the convergence/budget params in `config/orchestrator.yaml`.
+
 ## Troubleshooting
 - **`nvidia-smi` fails / "couldn't communicate with the NVIDIA driver"** → no host
   driver; see step 0a (install + reboot). The GPU showing in `lspci` but no
   `nvidia-driver` in `dpkg -l` confirms it's just not installed.
+- **`Detection older than oldest odom` / `No neighboring cloud`** → clock desync.
+  Ensure every node uses `use_sim_time:=true` and you did NOT restart the sim
+  under live perception (relaunch the whole stack instead).
+- **`libortools.so: cannot open shared object`** → the or-tools lib path isn't on
+  `LD_LIBRARY_PATH`; the image sets it in `.bashrc` (use a login shell `bash -lc`).
 - **`docker: unknown command: docker compose`** → Compose v2 plugin missing:
   `sudo apt install -y docker-compose-plugin` (or use hyphenated `docker-compose`).
 - `docker` needs sudo → add user to docker group + re-login: `sudo usermod -aG docker $USER`.
