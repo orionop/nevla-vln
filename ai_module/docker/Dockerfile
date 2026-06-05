@@ -51,6 +51,7 @@ RUN python3 -m pip install --no-cache-dir --break-system-packages --ignore-insta
 # SAM2 (facebookresearch) — its own layer, CUDA extension disabled so it installs
 # without nvcc/build matching (runs fine without the optional kernels).
 RUN SAM2_BUILD_CUDA=0 python3 -m pip install --no-cache-dir --break-system-packages \
+      --timeout 120 --retries 10 \
       "git+https://github.com/facebookresearch/sam2.git"
 # colcon --symlink-install builds ament_python packages via `setup.py develop`,
 # which setuptools>=80 removed (our deps pulled a newer setuptools) ->
