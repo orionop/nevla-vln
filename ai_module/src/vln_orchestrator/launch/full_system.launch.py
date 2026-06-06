@@ -25,7 +25,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
                             TimerAction)
-from launch.launch_description_sources import AnyLaunchDescriptionSource
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node, SetParameter
 
@@ -58,15 +58,15 @@ def generate_launch_description() -> LaunchDescription:
 
     # exploration brain, started after perception is warm
     vlm = IncludeLaunchDescription(
-        AnyLaunchDescriptionSource(os.path.join(vlm_share, "vlm_node_sim.launch")),
+        PythonLaunchDescriptionSource(os.path.join(vlm_share, "vlm_node_sim.launch")),
         launch_arguments={"use_sim_time": "true"}.items(),
     )
     tare = IncludeLaunchDescription(
-        AnyLaunchDescriptionSource(os.path.join(tare_share, "explore_world_sim.launch")),
+        PythonLaunchDescriptionSource(os.path.join(tare_share, "explore_world_sim.launch")),
         launch_arguments={"scenario": scenario}.items(),
     )
     room_seg = IncludeLaunchDescription(
-        AnyLaunchDescriptionSource(os.path.join(tare_share, "room_segmentation.launch")),
+        PythonLaunchDescriptionSource(os.path.join(tare_share, "room_segmentation.launch")),
         launch_arguments={"scenario": scenario}.items(),
     )
     explore_group = TimerAction(period=delay, actions=[vlm, tare, room_seg])
