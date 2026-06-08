@@ -116,9 +116,14 @@ USER docker
 # runtime (plain install would not place config/ next to the module).
 # ---------------------------------------------------------------------------
 WORKDIR /home/docker/ai_module
+# Cap compile parallelism: tare_planner's PCL/abseil/OR-Tools/Eigen templates use
+# 2-4 GB per g++ job; the default (-j nproc) spawns enough parallel jobs to
+# exhaust RAM and freeze the laptop. -j2 keeps peak RAM bounded (slower but safe;
+# drop to -j1 if it still strains).
 RUN /bin/bash -c "\
     source /opt/ros/jazzy/setup.bash && \
-    colcon build --symlink-install \
+    export MAKEFLAGS='-j2' && export CMAKE_BUILD_PARALLEL_LEVEL=2 && \
+    colcon build --symlink-install --parallel-workers 1 \
       --cmake-args -DCMAKE_BUILD_TYPE=Release \
       --packages-select tare_planner dummy_vlm vln_orchestrator vlm_node semantic_mapping"
 
