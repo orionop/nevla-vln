@@ -75,7 +75,9 @@ def generate_launch_description() -> LaunchDescription:
     explore_group = TimerAction(period=delay, actions=[vlm, tare, room_seg])
 
     return LaunchDescription([
-        DeclareLaunchArgument("scenario", default_value="indoor"),
+        # matterport_sim carries the room-segmentation params (room_resolution,
+        # ...) SysNav's room-aware TARE needs; indoor.yaml is the base config.
+        DeclareLaunchArgument("scenario", default_value="matterport_sim"),
         DeclareLaunchArgument("explore_delay_s", default_value="75.0"),
         DeclareLaunchArgument("object_file", default_value=default_object_file),
         # one clock for every node -> no detection/odom time desync
