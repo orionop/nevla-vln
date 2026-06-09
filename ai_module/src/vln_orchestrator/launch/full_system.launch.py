@@ -35,8 +35,11 @@ def generate_launch_description() -> LaunchDescription:
     delay = LaunchConfiguration("explore_delay_s")
     object_file = LaunchConfiguration("object_file")
 
-    sm_dir = get_package_share_directory("semantic_mapping")
-    default_object_file = os.path.join(sm_dir, "config", "objects.yaml")
+    # the detector/mapper read their vocab from the SOURCE tree (config/ is not
+    # installed to share; nodes resolve it via --symlink-install CONFIG_DIR).
+    default_object_file = (
+        "/home/docker/ai_module/src/semantic_mapping/semantic_mapping/config/objects.yaml"
+    )
     tare_share = get_package_share_directory("tare_planner")
     vlm_share = get_package_share_directory("vlm_node")
 
