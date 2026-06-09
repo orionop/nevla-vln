@@ -18,13 +18,13 @@ from vlm_node.constants import (
 )
 from tare_planner.msg import RoomType, RoomEarlyStop1, VlmAnswer, ObjectType, NavigationQuery, TargetObjectInstruction, TargetObject, TargetObjectWithSpatial
 try:
-    # RViz status overlay only (non-functional). Guard so the node runs even if
-    # rviz_2d_overlay_msgs isn't packaged for this ROS distro.
     from rviz_2d_overlay_msgs.msg import OverlayText
-    _HAVE_OVERLAY = True
 except Exception:
     OverlayText = None
-    _HAVE_OVERLAY = False
+# RViz status overlay only (non-functional). The installed rviz_2d_overlay_msgs
+# has float fields where SysNav's code sets ints -> PyFloat_Check assertion crash.
+# Disable it entirely; it adds nothing to the pipeline.
+_HAVE_OVERLAY = False
 from openai import OpenAI
 from pydantic import BaseModel
 import os
