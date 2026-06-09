@@ -62,7 +62,7 @@ def generate_launch_description() -> LaunchDescription:
     # exploration brain, started after perception is warm
     vlm = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(vlm_share, "vlm_node_sim.launch")),
-        launch_arguments={"use_sim_time": "true"}.items(),
+        launch_arguments={"use_sim_time": "false"}.items(),
     )
     tare = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(tare_share, "explore_world_sim.launch")),
@@ -80,8 +80,10 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("scenario", default_value="matterport_sim"),
         DeclareLaunchArgument("explore_delay_s", default_value="75.0"),
         DeclareLaunchArgument("object_file", default_value=default_object_file),
-        # one clock for every node -> no detection/odom time desync
-        SetParameter(name="use_sim_time", value=True),
+        # The CMU sim publishes no /clock, so use_sim_time:=true makes nodes see
+        # time 0 (TARE: "Start time is zero"). Use the wall clock; desync is avoided
+        # by one coordinated launch (never restart the sim under live perception).
+        SetParameter(name="use_sim_time", value=False),
         detection,
         mapping,
         orchestrator,
