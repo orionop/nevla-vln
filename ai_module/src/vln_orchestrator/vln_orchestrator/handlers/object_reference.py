@@ -15,8 +15,6 @@ Scored by 3D bbox IoU with GT (0-2).
 """
 from __future__ import annotations
 
-import os
-
 from vln_orchestrator.handlers.base import BaseHandler
 from vln_orchestrator.reasoning.decomposition import (
     Decomposition,
@@ -32,12 +30,15 @@ class ObjectReferenceHandler(BaseHandler):
 
     def _decompose(self, question: str) -> Decomposition:
         """VLM decomposition when an API key is available, else heuristic."""
-        if os.environ.get("GEMINI_API_KEY") or os.environ.get("DASHSCOPE_API_KEY"):
+        from vln_orchestrator.reasoning.vlm_client import answer_key_available
+        if answer_key_available():
             try:
                 if self._client is None:
                     from vln_orchestrator.reasoning.vlm_client import VLMClient
                     self._client = VLMClient()
-                return vlm_decompose(question, self._client)
+                decomp = vlm_decompose(question, self._client)
+                self.log.info("decompose: used VLM answer path.")
+                return decomp
             except Exception as e:
                 self.log.warn(f"VLM decompose failed ({e}); using heuristic.")
         return heuristic_decompose(question)

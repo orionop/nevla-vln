@@ -15,8 +15,6 @@ Scored 0/1 by exact match, so calibration of the count matters more than recall.
 """
 from __future__ import annotations
 
-import os
-
 from vln_orchestrator.handlers.base import BaseHandler
 from vln_orchestrator.reasoning.counting import count_matching
 from vln_orchestrator.reasoning.decomposition import (
@@ -32,12 +30,15 @@ class NumericalHandler(BaseHandler):
         self._client = None  # lazy VLM client; only built if a key is present
 
     def _decompose(self, question: str) -> Decomposition:
-        if os.environ.get("GEMINI_API_KEY") or os.environ.get("DASHSCOPE_API_KEY"):
+        from vln_orchestrator.reasoning.vlm_client import answer_key_available
+        if answer_key_available():
             try:
                 if self._client is None:
                     from vln_orchestrator.reasoning.vlm_client import VLMClient
                     self._client = VLMClient()
-                return vlm_decompose(question, self._client)
+                decomp = vlm_decompose(question, self._client)
+                self.log.info("decompose: used VLM answer path.")
+                return decomp
             except Exception as e:
                 self.log.warn(f"VLM decompose failed ({e}); using heuristic.")
         return heuristic_decompose(question)

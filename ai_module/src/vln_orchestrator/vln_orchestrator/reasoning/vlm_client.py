@@ -45,11 +45,31 @@ class ProviderConfig:
     model_lite: str
 
 
+def _answer_gemini_key() -> str:
+    """Gemini key for the answer path. Prefers ORCHESTRATOR_GEMINI_API_KEY so the
+    orchestrator can run on a separate free-tier quota from vlm_node (exploration),
+    which reads GEMINI_API_KEY. Falls back to GEMINI_API_KEY for single-key runs."""
+    return (os.environ.get("ORCHESTRATOR_GEMINI_API_KEY", "")
+            or os.environ.get("GEMINI_API_KEY", ""))
+
+
+def _answer_dashscope_key() -> str:
+    return (os.environ.get("ORCHESTRATOR_DASHSCOPE_API_KEY", "")
+            or os.environ.get("DASHSCOPE_API_KEY", ""))
+
+
+def answer_key_available() -> bool:
+    """True if the answer path has any usable provider key. Used by handlers to
+    decide whether to build a VLMClient (vs. heuristic fallback)."""
+    _load_dotenv()
+    return bool(_answer_gemini_key() or _answer_dashscope_key())
+
+
 def resolve_provider() -> ProviderConfig:
     """Pick provider from VLM_PROVIDER or whichever key is set (Gemini wins)."""
     _load_dotenv()
-    gemini = os.environ.get("GEMINI_API_KEY", "")
-    dashscope = os.environ.get("DASHSCOPE_API_KEY", "")
+    gemini = _answer_gemini_key()
+    dashscope = _answer_dashscope_key()
     provider = os.environ.get("VLM_PROVIDER", "").lower()
     if provider not in ("gemini", "qwen"):
         provider = "gemini" if gemini or not dashscope else "qwen"
