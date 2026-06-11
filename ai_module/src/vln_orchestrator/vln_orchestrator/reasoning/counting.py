@@ -19,11 +19,21 @@ from vln_orchestrator.reasoning.spatial import (
     Instance,
     between,
     binary_predicate,
+    distance,
+    footprint_iou,
     is_between_relation,
     is_binary_relation,
     is_superlative_relation,
     superlative_selector,
 )
+
+# Duplicate-instance thresholds. The semantic map can carry the same physical
+# object as several un-merged instances (same class, seen from different
+# viewpoints) -> raw counts over-report (e.g. 21 chairs where there are 8). Two
+# same-class instances are treated as one if their footprints overlap enough OR
+# their centers are nearly coincident (covers degenerate/empty-cloud boxes).
+DEDUP_IOU = 0.3
+DEDUP_CENTER_M = 0.25
 
 
 def _singular(word: str) -> str:
@@ -54,6 +64,34 @@ def label_matches(label: str, target: str) -> bool:
 
 def filter_by_label(instances: list[Instance], target: str) -> list[Instance]:
     return [o for o in instances if label_matches(o.label, target)]
+
+
+def dedup_instances(
+    instances: list[Instance],
+    iou_thresh: float = DEDUP_IOU,
+    center_thresh: float = DEDUP_CENTER_M,
+) -> list[Instance]:
+    """Collapse duplicate detections of the same physical object.
+
+    Greedy NMS within each (singularized) label group: an instance is a duplicate
+    of an already-kept one if their footprint IoU exceeds `iou_thresh` or their
+    centers are within `center_thresh` metres. Distinct adjacent objects (e.g.
+    dining chairs ~0.5 m apart with low overlap) are preserved; only near-
+    coincident re-observations are merged. Order-stable.
+    """
+    kept: list[Instance] = []
+    for o in instances:
+        dup = False
+        for r in kept:
+            if not label_matches(o.label, r.label):
+                continue
+            if (footprint_iou(o.bbox, r.bbox) > iou_thresh
+                    or distance(o.bbox, r.bbox) < center_thresh):
+                dup = True
+                break
+        if not dup:
+            kept.append(o)
+    return kept
 
 
 def filter_by_attributes(
@@ -91,8 +129,10 @@ def count_matching(decomp: Decomposition, instances: list[Instance]) -> int:
          - superlative ("closest/farthest ...") -> selects ONE object, so the
            count collapses to 0/1 (the single best match, if an anchor exists).
     """
-    targets = filter_by_attributes(
-        filter_by_label(instances, decomp.target_object), decomp.attributes
+    targets = dedup_instances(
+        filter_by_attributes(
+            filter_by_label(instances, decomp.target_object), decomp.attributes
+        )
     )
     if not targets:
         return 0

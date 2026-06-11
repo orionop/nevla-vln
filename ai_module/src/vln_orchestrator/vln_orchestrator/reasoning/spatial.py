@@ -65,6 +65,23 @@ def xy_overlap(a: dict, b: dict) -> bool:
             and a_min[1] <= b_max[1] and a_max[1] >= b_min[1])
 
 
+def footprint_iou(a: dict, b: dict) -> float:
+    """Axis-aligned IoU of the two boxes' horizontal (xy) footprints, in [0,1].
+
+    Heading is ignored (cheap approximation; good enough for duplicate detection).
+    Used to spot the same physical object mapped as several un-merged instances.
+    """
+    a_min, a_max = bounds(a)
+    b_min, b_max = bounds(b)
+    ix = max(0.0, min(a_max[0], b_max[0]) - max(a_min[0], b_min[0]))
+    iy = max(0.0, min(a_max[1], b_max[1]) - max(a_min[1], b_min[1]))
+    inter = ix * iy
+    area_a = (a_max[0] - a_min[0]) * (a_max[1] - a_min[1])
+    area_b = (b_max[0] - b_min[0]) * (b_max[1] - b_min[1])
+    union = area_a + area_b - inter
+    return inter / union if union > 0 else 0.0
+
+
 # --------------------------------------------------------------------------- #
 # Binary relations: relation(target, anchor) -> bool
 # --------------------------------------------------------------------------- #

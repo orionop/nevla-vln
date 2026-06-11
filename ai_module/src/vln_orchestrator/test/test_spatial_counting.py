@@ -16,6 +16,7 @@ sys.path.insert(0, str(PKG))
 from vln_orchestrator.reasoning.decomposition import Decomposition  # noqa: E402
 from vln_orchestrator.reasoning.counting import (  # noqa: E402
     count_matching,
+    dedup_instances,
     label_matches,
 )
 from vln_orchestrator.reasoning import spatial  # noqa: E402
@@ -126,6 +127,33 @@ def test_count_superlative_collapses():
     print("✓ count superlative collapses to single match")
 
 
+def test_dedup_collapses_duplicates():
+    # the same chair mapped 3x from slightly different viewpoints (near-coincident)
+    dups = [
+        Instance("chair", box(2.0, 2.0, 0.5)),
+        Instance("chair", box(2.1, 2.05, 0.5)),
+        Instance("chair", box(1.95, 1.9, 0.5)),
+    ]
+    assert len(dedup_instances(dups)) == 1
+    # two genuinely distinct chairs ~0.7 m apart (low overlap) survive
+    distinct = [Instance("chair", box(0, 0, 0.5)), Instance("chair", box(0.7, 0, 0.5))]
+    assert len(dedup_instances(distinct)) == 2
+    # cross-class objects are never merged
+    mixed = [Instance("chair", box(0, 0, 0.5)), Instance("table", box(0, 0, 0.5))]
+    assert len(dedup_instances(mixed)) == 2
+    print("✓ dedup collapses duplicates, keeps distinct + cross-class")
+
+
+def test_count_dedups_overcount():
+    # 8 true chairs but one is mapped as 3 un-merged instances -> 10 raw, 8 deduped
+    insts = [Instance("chair", box(float(i) * 1.5, 0, 0.5)) for i in range(8)]
+    insts += [Instance("chair", box(0.05, 0.05, 0.5)),
+              Instance("chair", box(-0.05, 0.0, 0.5))]   # 2 dups of chair #0
+    d = Decomposition(target_object="chairs")
+    assert count_matching(d, insts) == 8
+    print("✓ count dedups an over-reported class")
+
+
 if __name__ == "__main__":
     test_label_matches()
     test_binary_predicates()
@@ -135,4 +163,6 @@ if __name__ == "__main__":
     test_count_binary_relation()
     test_count_missing_anchor_falls_back()
     test_count_superlative_collapses()
+    test_dedup_collapses_duplicates()
+    test_count_dedups_overcount()
     print("\nAll spatial + counting tests passed.")
