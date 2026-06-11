@@ -30,7 +30,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 
-from std_msgs.msg import String, Int32
+from std_msgs.msg import String, Int32, Bool
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose2D
 from visualization_msgs.msg import Marker
@@ -92,12 +92,24 @@ class VLNOrchestrator(Node):
         # the system). We then only wait for the map to build and answer; we do NOT
         # publish exploration waypoints (avoids fighting TARE's /way_point).
         self._external_exploration = bool(self.declare_parameter("external_exploration", False).value)
+        # In external mode TARE's exploration_finish (std_msgs/Bool) is the
+        # AUTHORITATIVE "done" signal. Map-stability alone is unreliable here: a
+        # stalled or detection-starved map looks "stable" and triggered a wrong
+        # early answer. So we wait for this signal; map-stability is only a long
+        # backstop in case the signal never arrives (then we still answer in time).
+        self._exploration_finish_topic = str(
+            self.declare_parameter("exploration_finish_topic", "exploration_finish").value)
+        self._stability_backstop_s = float(
+            self.declare_parameter("stability_backstop_s", 180.0).value)
+        self._exploration_finished = False
         self._terrain_subsample = int(self.declare_parameter("terrain_subsample", 5).value)
         self._explorer = ExplorationController(
             frontier_clearance=float(self.declare_parameter("frontier_clearance", 2.0).value),
             max_step=float(self.declare_parameter("explore_step", 4.0).value),
         )
         self.create_subscription(PointCloud2, "/terrain_map", self._on_terrain, 5)
+        self.create_subscription(
+            Bool, self._exploration_finish_topic, self._on_exploration_finish, 5)
         self._phase = "idle"          # idle -> explore -> done
         self._question = None
         self._qtype = None
@@ -152,6 +164,13 @@ class VLNOrchestrator(Node):
         if self.semantic_map is not None:
             self.semantic_map.update_from_msg(msg)
 
+    def _on_exploration_finish(self, msg: Bool) -> None:
+        """TARE signals the scene is fully explored. Authoritative convergence in
+        external mode (latches once true)."""
+        if msg.data and not self._exploration_finished:
+            self._exploration_finished = True
+            self.get_logger().info("exploration_finish received from TARE.")
+
     # ------------------------------------------------------------------ #
     # Callbacks
     # ------------------------------------------------------------------ #
@@ -180,7 +199,9 @@ class VLNOrchestrator(Node):
         # explores toward the question's target. Republished by _explore_tick for
         # a few seconds in case vlm_node subscribed late.
         self._keyboard_pub.publish(String(data=question))
-        self._keyboard_sent_until = now + 5.0
+        # brief re-publish window in case vlm_node subscribed late; kept short
+        # because vlm_node re-decomposes (a VLM call) on every repeat.
+        self._keyboard_sent_until = now + 2.0
         self.get_logger().info(
             f"Question [{self._qtype.value}]: {question} -> exploring"
         )
@@ -224,15 +245,25 @@ class VLNOrchestrator(Node):
         if elapsed >= self._explore_budget_s:
             self._do_answer("budget", elapsed); return
         stable = (now - self._last_growth_s) >= self._convergence_timeout_s
-        # external explorer (TARE) drives -> our frontier-coverage check is
-        # meaningless, so converge on map-stability alone. When we drive, also
-        # require the area to look covered.
+        # external explorer (TARE) drives. Its exploration_finish signal is the
+        # authoritative "done" marker; map-stability alone is NOT (a stalled or
+        # detection-starved map looks "stable" -> answered a partial scene early).
+        # Use stability only as a long backstop so we still answer within budget if
+        # the signal never arrives. When WE drive, require coverage as before.
         if self._external_exploration:
-            converged = stable
+            backstop = stable and elapsed >= self._stability_backstop_s
+            if self._exploration_finished:
+                reason = "tare_finished"
+            elif backstop:
+                reason = "stability_backstop"
+            else:
+                reason = ""
+            converged = bool(reason)
         else:
             converged = stable and self._explorer.is_covered(self.vehicle_x, self.vehicle_y)
+            reason = "converged"
         if converged and elapsed >= self._min_explore_s:
-            self._do_answer("converged", elapsed); return
+            self._do_answer(reason, elapsed); return
 
         # external explorer (e.g. TARE) drives the robot; we just wait + answer
         if self._external_exploration:
