@@ -7,11 +7,31 @@
     "object_reference": [
       {
         "question": "Find the pillow closest to the book on the stool.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 1.4909189762451907,
+          "cy": -2.1159247808666244,
+          "cz": 0.4155557807477025,
+          "l": 0.4181683914780614,
+          "w": 0.2153249614967896,
+          "h": 0.3617597818610194,
+          "heading": 0.005643819763299212,
+          "object_id": 73,
+          "label": "pillow"
+        }
       },
       {
         "question": "Find the wall lamp that is between a door frame and a window.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 1.470985103356448,
+          "cy": 2.4240973259331917,
+          "cz": 2.0742388756260812,
+          "l": 0.19330751802706114,
+          "w": 0.10041049306305361,
+          "h": 0.4443559066464302,
+          "heading": 3.1414113171174187,
+          "object_id": 26,
+          "label": "wall lamp"
+        }
       }
     ],
     "instruction_following": [
@@ -33,11 +53,31 @@
     "object_reference": [
       {
         "question": "Find the bowl on the table closest to the folding screen.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 4.257395891837925,
+          "cy": -0.12699538665302534,
+          "cz": 0.8224564011992022,
+          "l": 0.15871842646626844,
+          "w": 0.15792349686087226,
+          "h": 0.09201472099127006,
+          "heading": 2.268927886869781,
+          "object_id": 71,
+          "label": "bowl"
+        }
       },
       {
         "question": "Find the pillow on the chair that is closest to the TV.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 4.213042502649757,
+          "cy": 0.5505988433588612,
+          "cz": 0.6155522012153694,
+          "l": 0.20501681184755338,
+          "w": 0.40800486825281457,
+          "h": 0.348109464259868,
+          "heading": -1.5667990896874016,
+          "object_id": 35,
+          "label": "pillow"
+        }
       }
     ],
     "instruction_following": [
@@ -59,11 +99,31 @@
     "object_reference": [
       {
         "question": "Find the clock on the TV cabinet.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 7.262726841962139,
+          "cy": -4.912427597654945,
+          "cz": 0.997541776201803,
+          "l": 0.18577753444492373,
+          "w": 0.07705104163283139,
+          "h": 0.2005528736433877,
+          "heading": 0.6457528813581658,
+          "object_id": 185,
+          "label": "clock"
+        }
       },
       {
         "question": "Find the bowl closest to the knife rack near the trash can.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -6.686029304325834,
+          "cy": -2.8085010004130533,
+          "cz": 1.1895461234636604,
+          "l": 0.2615806803667251,
+          "w": 0.2530871349014978,
+          "h": 0.11500009575015957,
+          "heading": 2.786942006376272,
+          "object_id": 96,
+          "label": "bowl"
+        }
       }
     ],
     "instruction_following": [
@@ -85,11 +145,31 @@
     "object_reference": [
       {
         "question": "Find the lamp on the nightstand that has the photo on it.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -9.064622482715825,
+          "cy": -0.5958880177195797,
+          "cz": 1.0387006476879295,
+          "l": 0.40352260104507565,
+          "w": 0.405175196613228,
+          "h": 0.677401252162495,
+          "heading": 3.062315202504642,
+          "object_id": 51,
+          "label": "lamp"
+        }
       },
       {
         "question": "Find the speaker on the TV cabinet closest to the potted plant on the TV cabinet.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -2.592940325270201,
+          "cy": 2.4830025469576222,
+          "cz": 1.0082000305578118,
+          "l": 0.10306843903594398,
+          "w": 0.14880014019472387,
+          "h": 0.6564001025408521,
+          "heading": 1.5707963267948912,
+          "object_id": 84,
+          "label": "speaker"
+        }
       }
     ],
     "instruction_following": [
@@ -111,11 +191,31 @@
     "object_reference": [
       {
         "question": "Find the bedside table farthest from the window.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 3.5302891681562993,
+          "cy": 0.18100886235272912,
+          "cz": 0.3238348232419661,
+          "l": 0.8722669781571999,
+          "w": 0.7946614111052266,
+          "h": 0.6506734155209348,
+          "heading": -3.141585613040203,
+          "object_id": 72,
+          "label": "bedside table"
+        }
       },
       {
         "question": "Find the picture above the suitcase furthest from the floor.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -1.9112202547363737,
+          "cy": -3.0735329564189446,
+          "cz": 1.6921871453927433,
+          "l": 0.38968690325555144,
+          "w": 0.015457171525147029,
+          "h": 0.4547027986067842,
+          "heading": 1.5708245324339838,
+          "object_id": 6,
+          "label": "picture"
+        }
       }
     ],
     "instruction_following": [
@@ -137,11 +237,31 @@
     "object_reference": [
       {
         "question": "Find the flowers near the window.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -3.9799275290012184,
+          "cy": 1.262848154053186,
+          "cz": 0.65295604212197,
+          "l": 0.25258522655906407,
+          "w": 0.1857899411284425,
+          "h": 0.5175539768390096,
+          "heading": 1.1265878898471628,
+          "object_id": 38,
+          "label": "flowers"
+        }
       },
       {
         "question": "Find the picture closest to the bench.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -1.2265030129774963,
+          "cy": 2.467709074384192,
+          "cz": 1.3075467482789094,
+          "l": 0.40428889400521073,
+          "w": 0.008056601195610025,
+          "h": 0.6025944925141395,
+          "heading": -4.786000271028732e-08,
+          "object_id": 31,
+          "label": "picture"
+        }
       }
     ],
     "instruction_following": [
@@ -163,11 +283,31 @@
     "object_reference": [
       {
         "question": "The lantern between the vase and the stone decoration that is closest to the vase.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -1.3880010018231317,
+          "cy": 5.1019987580236,
+          "cz": 0.34415377727274554,
+          "l": 0.16217833406597126,
+          "w": 0.16217806569402082,
+          "h": 0.3744375989616789,
+          "heading": -1.5707960877329514,
+          "object_id": 56,
+          "label": "lantern"
+        }
       },
       {
         "question": "The red pillow closest to the sushi.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -0.37030776653051334,
+          "cy": 1.478176863293618,
+          "cz": 0.0579776407380417,
+          "l": 0.43884791191462624,
+          "w": 0.4415639516163774,
+          "h": 0.06335467371561944,
+          "heading": -0.06500709487437549,
+          "object_id": 46,
+          "label": "pillow"
+        }
       }
     ],
     "instruction_following": [
@@ -189,11 +329,31 @@
     "object_reference": [
       {
         "question": "Find the vase on the cabinet below the picture.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -1.1499276868975108,
+          "cy": 2.342958504160549,
+          "cz": 1.822240013115591,
+          "l": 0.17609555822120493,
+          "w": 0.17446040767356408,
+          "h": 0.18047941653732646,
+          "heading": -0.5236000096509692,
+          "object_id": 11,
+          "label": "vase"
+        }
       },
       {
         "question": "Find the pillow on the sofa that is closest to the windows.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -2.0743294092908418,
+          "cy": -2.601469481529491,
+          "cz": 0.6125368113380167,
+          "l": 0.41863958269748003,
+          "w": 0.6072140658330403,
+          "h": 0.4058583517961509,
+          "heading": 3.120532839842702,
+          "object_id": 16,
+          "label": "pillow"
+        }
       }
     ],
     "instruction_following": [
@@ -215,11 +375,31 @@
     "object_reference": [
       {
         "question": "Find the stool closest to the shelf near the TV cabinet.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 1.8894900036671123,
+          "cy": 0.5311715460039568,
+          "cz": 0.416439320124006,
+          "l": 0.3882519897095458,
+          "w": 0.3876496690127084,
+          "h": 0.8721118489628217,
+          "heading": -0.00030266997214926727,
+          "object_id": 56,
+          "label": "stool"
+        }
       },
       {
         "question": "Find the pillow on the sofa that is closest to the lamp.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -1.5087084578569296,
+          "cy": -3.430232269795495,
+          "cz": 0.821680000484538,
+          "l": 0.5510655032435117,
+          "w": 0.23133787600400635,
+          "h": 0.482858963472826,
+          "heading": -1.5638746272347592,
+          "object_id": 5,
+          "label": "pillow"
+        }
       }
     ],
     "instruction_following": [
@@ -241,11 +421,31 @@
     "object_reference": [
       {
         "question": "Find the potted plant near the books on the cabinet.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 5.659232774015879,
+          "cy": 0.5867169473896577,
+          "cz": 1.1701325612838738,
+          "l": 0.22241868000679865,
+          "w": 0.2187017172125394,
+          "h": 0.31829499777791526,
+          "heading": 0.7325803845904391,
+          "object_id": 58,
+          "label": "potted plant"
+        }
       },
       {
         "question": "Find the vase between the cabinet and the stool.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 3.8819526718120483,
+          "cy": 0.49602629594492215,
+          "cz": 0.33189545890231187,
+          "l": 0.45094121953966315,
+          "w": 0.45094153555253946,
+          "h": 0.6638212953291589,
+          "heading": -2.159738861790109,
+          "object_id": 37,
+          "label": "vase"
+        }
       }
     ],
     "instruction_following": [
@@ -267,11 +467,31 @@
     "object_reference": [
       {
         "question": "Find the picture closest to a window.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 2.066497177919661,
+          "cy": -3.2610006338514728,
+          "cz": 1.49576552816977,
+          "l": 0.618970123134746,
+          "w": 0.015005660977861268,
+          "h": 0.7915311990939715,
+          "heading": 1.5707962740734902,
+          "object_id": 8,
+          "label": "picture"
+        }
       },
       {
         "question": "Find the fossil decoration closest to the phone.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 1.8714961064772937,
+          "cy": -0.4610214954554096,
+          "cz": 0.8955720169377727,
+          "l": 0.2815466850778389,
+          "w": 0.1234691231133227,
+          "h": 0.3091441442463492,
+          "heading": 1.575881508743824,
+          "object_id": 94,
+          "label": "fossil decoration"
+        }
       }
     ],
     "instruction_following": [
@@ -293,11 +513,31 @@
     "object_reference": [
       {
         "question": "The blue chair that is closest to the cup of coffee.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 1.4690277938712661,
+          "cy": 2.8710193759388183,
+          "cz": 0.48475688377037723,
+          "l": 0.5066920928880432,
+          "w": 0.5494096852506765,
+          "h": 0.9686608526590678,
+          "heading": 0.0030586824842529703,
+          "object_id": 10,
+          "label": "chair"
+        }
       },
       {
         "question": "Find the potted plant between a vase and the cabinet with a TV on it.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 4.251787335833298,
+          "cy": -1.3336187847204195,
+          "cz": 0.4996929455442298,
+          "l": 0.8910064321324804,
+          "w": 0.7921397341560299,
+          "h": 0.9993862861021205,
+          "heading": 1.73113089597869,
+          "object_id": 110,
+          "label": "potted plant"
+        }
       }
     ],
     "instruction_following": [
@@ -319,11 +559,31 @@
     "object_reference": [
       {
         "question": "Find the potted plant on the file cabinet.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 1.13345335599001,
+          "cy": 1.276872956898863,
+          "cz": 1.326033263222298,
+          "l": 0.29530109226462975,
+          "w": 0.2858131605398066,
+          "h": 0.29921841053784015,
+          "heading": 0.8112673368872398,
+          "object_id": 55,
+          "label": "potted plant"
+        }
       },
       {
         "question": "Find the paper cup on the table closest to the projector screen.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": -1.6287330121221573,
+          "cy": -1.981081913783009,
+          "cz": 0.8098808318714392,
+          "l": 0.08833002749897134,
+          "w": 0.08806028732630367,
+          "h": 0.10599581010912984,
+          "heading": 1.751683262001014,
+          "object_id": 84,
+          "label": "paper cup"
+        }
       }
     ],
     "instruction_following": [
@@ -345,11 +605,31 @@
     "object_reference": [
       {
         "question": "Find the computer monitor closest to the cabinet with a phone on it.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 3.7040173937122582,
+          "cy": 3.0779857151416956,
+          "cz": 1.1139853982289813,
+          "l": 0.5563365239385001,
+          "w": 0.1496272433999737,
+          "h": 0.46905455221243897,
+          "heading": -1.5703452354156808,
+          "object_id": 75,
+          "label": "computer monitor"
+        }
       },
       {
         "question": "Find the box on the cabinet that is closest to the whiteboard.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 5.887546982637323,
+          "cy": 2.61660950435905,
+          "cz": 0.8984833813364251,
+          "l": 0.28328267543165175,
+          "w": 0.20171218255672363,
+          "h": 0.14119857155066962,
+          "heading": -4.275853189837839e-07,
+          "object_id": 36,
+          "label": "box"
+        }
       }
     ],
     "instruction_following": [
@@ -371,11 +651,31 @@
     "object_reference": [
       {
         "question": "Find the vase closest to the guitar.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 4.894263067510043,
+          "cy": -3.1483174316520803,
+          "cz": 1.2479722573784582,
+          "l": 0.29597473144743436,
+          "w": 0.38431099187214923,
+          "h": 2.4934444723070617,
+          "heading": 2.3499487159710046,
+          "object_id": 46,
+          "label": "vase"
+        }
       },
       {
         "question": "Find the beer bottle furthest from the couch.",
-        "gt_bbox": null
+        "gt_bbox": {
+          "cx": 2.45709969703506,
+          "cy": -1.3408069361463435,
+          "cz": 0.5829978721059597,
+          "l": 0.08824360930530517,
+          "w": 0.08771937530980434,
+          "h": 0.3234641540636488,
+          "heading": 2.757098657544885,
+          "object_id": 72,
+          "label": "beer bottle"
+        }
       }
     ],
     "instruction_following": [
