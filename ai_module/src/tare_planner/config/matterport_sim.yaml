@@ -149,7 +149,11 @@ room_segmentation:
     exploredAreaDisplayInterval: 1
     savePcd: false
     exploredAreaVoxelSize: 0.1
-    dilation_iteration: 6
+    # small Unity scenes (e.g. livingroom_3) have little free space; heavy
+    # dilation + large min_room_size erased every room -> empty graph -> robot
+    # parked. Lower both so single small rooms survive segmentation.
+    dilation_iteration: 2
+    min_room_size: 20
 
     # remeber to change in both room_segmentation and tare_planner
     room_resolution: 0.1
