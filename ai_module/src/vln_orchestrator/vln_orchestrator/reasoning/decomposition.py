@@ -43,12 +43,17 @@ _RELATION_WORDS = {
     "which", "below", "above", "under", "with", "to", "from", "next", "by",
     "behind", "beside", "over", "is", "are", "closest,", "of",
 }
-# common attribute adjectives that may lead the noun phrase
+# Color/size attributes that lead the noun phrase. These need a VISUAL (VLM)
+# check, so they are extracted as attributes and deferred to verification, not
+# geometric filtering. IDENTITY/material adjectives (potted, framed, folding,
+# wall, wooden, metal, glass, plastic) are deliberately NOT here: they belong to
+# the object's class ("potted plant", "wall lamp") and must stay attached to the
+# noun so label matching works — treating them as droppable attributes zeroed
+# valid counts.
 _ATTRIBUTES = {
     "red", "blue", "green", "yellow", "black", "white", "orange", "brown",
     "gray", "grey", "silver", "gold", "golden", "purple", "pink", "teal",
-    "small", "large", "big", "tall", "short", "round", "square", "wooden",
-    "metal", "glass", "plastic", "potted", "framed", "folding", "wall",
+    "small", "large", "big", "tall", "short", "round", "square",
 }
 _LEADING = re.compile(r"^\s*(find|locate|identify)\s+", re.IGNORECASE)
 _DETERMINER = re.compile(r"^\s*(the|a|an)\s+", re.IGNORECASE)
@@ -97,7 +102,12 @@ def heuristic_decompose(question: str) -> Decomposition:
     target = " ".join(head).lower() if head else (tokens[0].lower() if tokens else "")
 
     # remainder -> spatial relation + anchor (coarse)
-    rest = " ".join(tokens[i:]).strip()
+    rest = " ".join(tokens[i:]).strip().rstrip("?").strip()
+    # drop a leading copula/aux (+ optional that/which) so the relation regex sees
+    # "below a window" not "are below a window" -- numerical Qs ("How many X are
+    # <rel> Y?") otherwise lost the relation and fell back to a raw class count.
+    rest = re.sub(r"^(that\s+|which\s+)?(are|is|was|were)\s+", "", rest,
+                  flags=re.IGNORECASE).strip()
     relation, anchor = "", ""
     m = re.match(
         r"^(closest to|farthest from|furthest from|between|near|on|in|below|"
@@ -110,6 +120,7 @@ def heuristic_decompose(question: str) -> Decomposition:
         anchor = (m.group(3) or "").strip()
     else:
         anchor = rest
+    anchor = _DETERMINER.sub("", anchor).rstrip("?").strip()
 
     return Decomposition(
         target_object=target,

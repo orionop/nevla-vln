@@ -37,8 +37,11 @@ from vln_orchestrator.perception.semantic_map_adapter import SemanticMap  # noqa
 def scene_map(scene: str) -> SemanticMap:
     """VLA-3D objects -> a SemanticMap of perfect Instances."""
     sm = SemanticMap()
+    # attributes=[] mirrors the live ObjectNode adapter (color/size are deferred
+    # to VLM verification, not geometric filtering) so the offline number reflects
+    # the real pipeline rather than zeroing on color-vocab mismatch (maroon!=red).
     sm._instances = [
-        Instance(label=o.label, bbox=o.bbox, id=o.id, attributes=list(o.colors))
+        Instance(label=o.label, bbox=o.bbox, id=o.id, attributes=[])
         for o in load_scene_objects(scene)
     ]
     return sm

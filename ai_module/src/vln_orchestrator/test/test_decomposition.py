@@ -78,7 +78,27 @@ def main() -> int:
     for q in empty:
         print(f"  EMPTY target for: {q!r}")
 
-    return 1 if (fails or empty) else 0
+    # relation extraction: "How many X are <rel> Y?" must recover the relation
+    # and a clean anchor (the leading copula + '?' used to swallow them).
+    rel_checks = [
+        ("How many sofas are below a window?", "below", "window"),
+        ("How many pillows are on the sofa?", "on", "sofa"),
+        ("How many pictures are above the bed?", "above", "bed"),
+    ]
+    rel_fail = 0
+    for q, rel, anc in rel_checks:
+        d = heuristic_decompose(q)
+        if d.spatial_relation != rel or anc not in d.anchor_object:
+            rel_fail += 1
+            print(f"  REL MISS {q!r} -> rel={d.spatial_relation!r} anchor={d.anchor_object!r}")
+    print(f"numerical relation extraction: {len(rel_checks) - rel_fail}/{len(rel_checks)}")
+
+    # identity adjective stays on the noun (not dropped as a color attribute)
+    d = heuristic_decompose("How many potted plants are on a table?")
+    id_ok = "potted" not in d.attributes
+    print(f"identity-adjective kept on noun: {id_ok}")
+
+    return 1 if (fails or empty or rel_fail or not id_ok) else 0
 
 
 if __name__ == "__main__":

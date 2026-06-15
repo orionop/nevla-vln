@@ -87,32 +87,48 @@ def footprint_iou(a: dict, b: dict) -> float:
 # --------------------------------------------------------------------------- #
 NEAR_THRESH_M = 1.5          # default planar radius for "near"
 ON_GAP_M = 0.25              # vertical tolerance for "resting on top of"
+# geometry tolerances (NOT scene tuning): real furniture boxes mean an object
+# "on" a sofa rests on the seat (inside the sofa envelope, not above its top),
+# and a wall picture "above" a bed sits beside, not over, the bed footprint.
+ON_VERTICAL_GAP = 0.3        # slack on the resting-within-envelope band
+VERTICAL_PROXIMITY_M = 1.5   # planar reach for above/below when footprints miss
 
 
 def near(t: dict, a: dict, thresh: float = NEAR_THRESH_M) -> bool:
     return distance(t, a, planar=True) <= thresh
 
 
+def _horiz_near(t: dict, a: dict, thresh: float = VERTICAL_PROXIMITY_M) -> bool:
+    """Footprints overlap OR centers are within `thresh` (xy). Lets wall-mounted
+    objects count as above/below nearby furniture whose footprint they miss."""
+    return xy_overlap(t, a) or distance(t, a, planar=True) <= thresh
+
+
 def below(t: dict, a: dict) -> bool:
-    """target is below anchor: target center under anchor's center and the
-    footprints overlap (so "below the window", "under the picture")."""
-    return center3(t)[2] < center3(a)[2] and xy_overlap(t, a)
+    """target below anchor: target center under anchor's center, horizontally near
+    (so "below the window", "under the picture")."""
+    return center3(t)[2] < center3(a)[2] and _horiz_near(t, a)
 
 
 def above(t: dict, a: dict) -> bool:
-    return center3(t)[2] > center3(a)[2] and xy_overlap(t, a)
+    return center3(t)[2] > center3(a)[2] and _horiz_near(t, a)
 
 
 # "under" is the same relation as "below" for our purposes
 under = below
 
 
-def on(t: dict, a: dict, gap: float = ON_GAP_M) -> bool:
-    """target rests on top of anchor: target bottom ~ anchor top, footprints
-    overlap (e.g. "potted plant on the table")."""
-    t_min, _ = bounds(t)
-    _, a_max = bounds(a)
-    return xy_overlap(t, a) and abs(t_min[2] - a_max[2]) <= gap
+def on(t: dict, a: dict, gap: float = ON_VERTICAL_GAP) -> bool:
+    """target rests on/within anchor: target horizontal CENTER inside the anchor
+    footprint AND its bottom within the anchor's vertical envelope (+gap). Handles
+    objects resting on a seat/shelf inside the bbox, e.g. a pillow on a sofa or a
+    monitor on a table — not just things perched on the very top edge."""
+    a_min, a_max = bounds(a)
+    t_bottom = bounds(t)[0][2]
+    within_envelope = a_min[2] - gap <= t_bottom <= a_max[2] + gap
+    # footprint overlap (not center-strict): a pillow whose centre sits at the
+    # sofa's seat edge still counts as on it.
+    return xy_overlap(t, a) and within_envelope
 
 
 def between(t: dict, a: dict, b: dict, tol: float = 1.0) -> bool:
