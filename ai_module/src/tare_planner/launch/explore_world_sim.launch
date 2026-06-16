@@ -23,6 +23,15 @@ def generate_launch_description():
         default_value='true',
         description='Use boundary for navigation')
 
+    # exploration boundary polygon (.ply). MUST match the running scene — a
+    # mismatched boundary clips/misbounds the room and degenerates room_segmentation.
+    # Default = the shipped boundary_sim.ply; override per scene (e.g. one derived
+    # from the scene's traversable_area.ply).
+    boundary_file_arg = DeclareLaunchArgument(
+        'boundary_file',
+        default_value=get_package_share_directory('tare_planner') + '/boundary_sim.ply',
+        description='Path to the navigation boundary .ply for the current scene')
+
     explore_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [get_package_share_directory('tare_planner'), '/explore.launch']),
@@ -37,8 +46,7 @@ def generate_launch_description():
         name='navigationBoundary',
         output='screen',
         parameters=[
-            {'boundary_file_dir': get_package_share_directory(
-                'tare_planner') + '/boundary_sim.ply'},
+            {'boundary_file_dir': LaunchConfiguration('boundary_file')},
             {'sendBoundary': True},
             {'sendBoundaryInterval': 2}
         ],
@@ -48,6 +56,7 @@ def generate_launch_description():
         use_sim_time_arg,
         scenario_arg,
         use_boundary_arg,
+        boundary_file_arg,
         explore_launch,
         navigation_boundary_node,
     ])

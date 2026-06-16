@@ -34,6 +34,7 @@ def generate_launch_description() -> LaunchDescription:
     scenario = LaunchConfiguration("scenario")
     delay = LaunchConfiguration("explore_delay_s")
     object_file = LaunchConfiguration("object_file")
+    boundary_file = LaunchConfiguration("boundary_file")
 
     # the detector/mapper read their vocab from the SOURCE tree (config/ is not
     # installed to share; nodes resolve it via --symlink-install CONFIG_DIR).
@@ -66,7 +67,7 @@ def generate_launch_description() -> LaunchDescription:
     )
     tare = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(tare_share, "explore_world_sim.launch")),
-        launch_arguments={"scenario": scenario}.items(),
+        launch_arguments={"scenario": scenario, "boundary_file": boundary_file}.items(),
     )
     room_seg = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(tare_share, "room_segmentation.launch")),
@@ -80,6 +81,12 @@ def generate_launch_description() -> LaunchDescription:
         DeclareLaunchArgument("scenario", default_value="matterport_sim"),
         DeclareLaunchArgument("explore_delay_s", default_value="75.0"),
         DeclareLaunchArgument("object_file", default_value=default_object_file),
+        # exploration boundary — MUST match the running scene. Default = shipped
+        # boundary_sim.ply; pass a scene-matched one (derived from the scene's
+        # traversable_area.ply) e.g. data/boundary_sim_livingroom_3.ply.
+        DeclareLaunchArgument(
+            "boundary_file",
+            default_value=os.path.join(tare_share, "boundary_sim.ply")),
         # The CMU sim publishes no /clock, so use_sim_time:=true makes nodes see
         # time 0 (TARE: "Start time is zero"). Use the wall clock; desync is avoided
         # by one coordinated launch (never restart the sim under live perception).
