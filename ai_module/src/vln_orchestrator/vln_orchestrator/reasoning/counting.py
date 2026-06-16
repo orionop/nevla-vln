@@ -117,17 +117,20 @@ def filter_by_attributes(
     return out
 
 
-def count_matching(decomp: Decomposition, instances: list[Instance]) -> int:
-    """Count instances of the target class satisfying the decomposed constraints.
+def matching_instances(
+    decomp: Decomposition, instances: list[Instance]
+) -> list[Instance]:
+    """The deduped instances of the target class satisfying the decomposed
+    constraints (the set `count_matching` counts). Exposed so the numerical
+    handler can VLM-verify each candidate visually before counting (color +
+    spatial truth the geometry only approximates).
 
     Resolution order:
       1. target class + attributes
       2. spatial relation vs. anchor instances, if any:
-         - binary relation ("below/on/near ...") -> keep targets passing it
-           against ANY anchor instance.
+         - binary ("below/on/near ...") -> keep targets passing it vs ANY anchor.
          - "between" -> keep targets between SOME pair of anchors.
-         - superlative ("closest/farthest ...") -> selects ONE object, so the
-           count collapses to 0/1 (the single best match, if an anchor exists).
+         - superlative ("closest/farthest ...") -> ONE object (the best match).
     """
     targets = dedup_instances(
         filter_by_attributes(
@@ -135,38 +138,42 @@ def count_matching(decomp: Decomposition, instances: list[Instance]) -> int:
         )
     )
     if not targets:
-        return 0
+        return []
 
     relation = decomp.spatial_relation
     if not relation or not decomp.anchor_object:
-        return len(targets)
+        return targets
 
     anchors = filter_by_label(instances, decomp.anchor_object)
     if not anchors:
         # constraint references an anchor we never found; fall back to the
-        # unconstrained class count rather than asserting zero.
-        return len(targets)
+        # unconstrained class set rather than asserting empty.
+        return targets
 
     if is_superlative_relation(relation):
         selector = superlative_selector(relation)
-        # superlative against a single reference; use the nearest anchor as ref.
-        ref = anchors[0].bbox
-        return 1 if selector(targets, ref) is not None else 0
+        best = selector(targets, anchors[0].bbox)
+        return [best] if best is not None else []
 
     if is_between_relation(relation):
-        keep = []
-        for t in targets:
+        return [
+            t for t in targets
             if any(
                 between(t.bbox, anchors[i].bbox, anchors[j].bbox)
                 for i in range(len(anchors))
                 for j in range(i + 1, len(anchors))
-            ):
-                keep.append(t)
-        return len(keep)
+            )
+        ]
 
     if is_binary_relation(relation):
         pred = binary_predicate(relation)
-        return sum(1 for t in targets if any(pred(t.bbox, a.bbox) for a in anchors))
+        return [t for t in targets if any(pred(t.bbox, a.bbox) for a in anchors)]
 
-    # unknown relation phrase -> don't guess a filter; return class count.
-    return len(targets)
+    # unknown relation phrase -> don't guess a filter; return class set.
+    return targets
+
+
+def count_matching(decomp: Decomposition, instances: list[Instance]) -> int:
+    """Count instances of the target class satisfying the decomposed constraints
+    (geometric). `len(matching_instances(...))`."""
+    return len(matching_instances(decomp, instances))

@@ -46,6 +46,15 @@ def select_by_verification(candidates, is_match, max_checks: int = 6):
     return cands[0]
 
 
+def count_by_verification(candidates, is_match, max_checks: int = 12) -> int:
+    """Count how many candidates `is_match` accepts (VLM-verified count), checking
+    at most `max_checks` (latency cap for the 10-min budget). `is_match` is a
+    callable candidate -> bool; kept separate from the VLM call so the count policy
+    is unit-testable with a mock. Used by the numerical handler to adjudicate
+    color/spatial constraints visually instead of by brittle geometry."""
+    return sum(1 for inst in list(candidates)[:max_checks] if is_match(inst))
+
+
 def verify_candidate(
     decomp: Decomposition,
     candidate_image_bgr,

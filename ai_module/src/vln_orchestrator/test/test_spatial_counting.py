@@ -154,6 +154,16 @@ def test_count_dedups_overcount():
     print("✓ count dedups an over-reported class")
 
 
+def test_count_by_verification():
+    from vln_orchestrator.reasoning.verification import count_by_verification
+    cands = [Instance("pillow", box(float(i), 0, 0.5), id=i) for i in range(5)]
+    # VLM accepts a subset -> verified count
+    assert count_by_verification(cands, lambda c: c.id < 3) == 3
+    # max_checks bounds VLM calls
+    assert count_by_verification(cands, lambda c: True, max_checks=2) == 2
+    print("✓ count_by_verification (subset / max_checks)")
+
+
 if __name__ == "__main__":
     test_label_matches()
     test_binary_predicates()
@@ -165,4 +175,5 @@ if __name__ == "__main__":
     test_count_superlative_collapses()
     test_dedup_collapses_duplicates()
     test_count_dedups_overcount()
+    test_count_by_verification()
     print("\nAll spatial + counting tests passed.")
