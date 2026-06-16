@@ -19,7 +19,8 @@ Scored 0-6 with partial credit; penalties for wrong order / missed / forbidden.
 from __future__ import annotations
 
 from vln_orchestrator.handlers.base import BaseHandler
-from vln_orchestrator.reasoning.instruction_parser import parse_instruction
+from vln_orchestrator.reasoning.instruction_parser import GoalKind, parse_instruction
+from vln_orchestrator.reasoning.route import build_route, locate_region
 
 
 class InstructionFollowingHandler(BaseHandler):
@@ -38,17 +39,31 @@ class InstructionFollowingHandler(BaseHandler):
         if sm is not None and len(sm):
             waypoints: list[tuple[float, float]] = []
             for g in parsed.ordered_waypoints:          # GOTO/VIA/STOP, in order
-                inst = sm.locate(g.landmark)
-                if inst is not None:
-                    waypoints.append((inst.bbox["cx"], inst.bbox["cy"]))
+                # VIA points are regions ("between the two columns") -> centroid;
+                # GOTO/STOP are single objects -> resolve.
+                if g.kind == GoalKind.VIA:
+                    pt = locate_region(sm, g.landmark)
+                else:
+                    inst = sm.locate(g.landmark)
+                    pt = (inst.bbox["cx"], inst.bbox["cy"]) if inst else None
+                if pt is not None:
+                    waypoints.append(pt)
                     self.log.info(f"  located {g.kind.value}:{g.landmark!r} -> "
-                                  f"({inst.bbox['cx']:.2f},{inst.bbox['cy']:.2f})")
+                                  f"({pt[0]:.2f},{pt[1]:.2f})")
                 else:
                     self.log.warn(f"  could not locate {g.landmark!r}; skipping")
             if waypoints:
-                # TODO: replace straight-line landmark waypoints with a route
-                # planned around obstacles + avoid/via regions (SysNav route_planner).
-                self.node.stream_waypoints(waypoints)
+                # bend the ordered path around AVOID regions (base autonomy handles
+                # fine obstacle avoidance between the waypoints we emit).
+                avoid_centers = []
+                for g in parsed.avoid_regions:
+                    c = locate_region(sm, g.landmark)
+                    if c is not None:
+                        avoid_centers.append(c)
+                route = build_route(waypoints, avoid_centers)
+                if len(route) > len(waypoints):
+                    self.log.info(f"  detoured around {len(avoid_centers)} avoid region(s)")
+                self.node.stream_waypoints(route)
                 return
             self.log.warn("InstructionFollowingHandler: no landmarks located; fallback.")
         else:
