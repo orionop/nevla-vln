@@ -70,14 +70,29 @@ def eval_instruction(sm, q, ply):
     return len(path), scoring.instruction_similarity(path, str(ROOT / ply))
 
 
-def main(only: str | None = None):
+def _scene_set(arg: str | None) -> tuple[set[str] | None, str]:
+    """Resolve which scenes to eval. Default = DEV split (anti-overfit: never tune
+    on holdout). `--holdout` runs the private test set; a scene name runs just it."""
+    split = json.load(open(HERE / "split.json"))
+    if arg == "--holdout":
+        return set(split["holdout"]), "HOLDOUT (private test — do NOT tune on this)"
+    if arg == "--all":
+        return None, "ALL 15 (reporting only — do NOT tune)"
+    if arg:
+        return {arg}, arg
+    return set(split["dev"]), "DEV (8)"
+
+
+def main(arg: str | None = None):
+    scenes, label = _scene_set(arg)
     gt = json.load(open(HERE / "ground_truth.json"))
     root = vla3d_dir()
     num_hit = num_tot = 0
     obj_sum = obj_tot = 0.0
+    print(f"# split: {label}")
     print(f"{'scene':<16}{'type':<6}{'pred':>6} {'gt/score'}")
     for scene, s in gt.items():
-        if only and scene != only:
+        if scenes is not None and scene not in scenes:
             continue
         if not (root / scene).is_dir():
             continue

@@ -1,0 +1,22 @@
+{
+  "_note": "Anti-overfit train/val split. Tune ONLY on dev. Holdout is our private test set, run rarely (run_eval.py --holdout) to estimate generalization to the 3 hidden challenge scenes. NEVER fit logic/thresholds to holdout.",
+  "dev": [
+    "livingroom_3",
+    "arabic_room",
+    "home_building_1",
+    "chinese_room",
+    "hotel_room_1",
+    "japanese_room",
+    "office_1",
+    "loft"
+  ],
+  "holdout": [
+    "home_building_2",
+    "hotel_room_2",
+    "livingroom_1",
+    "livingroom_2",
+    "livingroom_4",
+    "office_2",
+    "studio"
+  ]
+}
