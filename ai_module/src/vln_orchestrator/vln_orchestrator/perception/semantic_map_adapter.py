@@ -93,7 +93,27 @@ class SemanticMap:
         cands = filter_by_label(self._instances, target)
         return filter_by_attributes(cands, attributes or [])
 
-    def candidates(self, decomp) -> list[Instance]:
+    def _anchor_instances(self, phrase: str, depth: int) -> list[Instance]:
+        """Resolve an anchor phrase to instances. If the anchor itself carries a
+        spatial relation ("chair closest to the TV", "table closest to X"),
+        recursively resolve it to the SINGLE best instance so the outer relation
+        anchors on the right object — referring expressions nest. Depth-capped to
+        one level to bound recursion. Otherwise a flat class match."""
+        if depth < 1:
+            from vln_orchestrator.reasoning.decomposition import heuristic_decompose
+            d = heuristic_decompose(phrase)
+            # Only collapse to one when the sub-relation is a SUPERLATIVE, which
+            # uniquely names a single object ("chair closest to the TV"). Binary
+            # sub-relations ("books on the cabinet") denote a GROUP — keep them all
+            # as anchors, else we'd resolve to one book and miss the real target.
+            if (d.target_object and d.anchor_object and d.spatial_relation
+                    and spatial.is_superlative_relation(d.spatial_relation)):
+                sub = self.candidates(d, _depth=depth + 1)
+                if sub:
+                    return [sub[0]]
+        return self.instances_of(phrase)
+
+    def candidates(self, decomp, _depth: int = 0) -> list[Instance]:
         """All instances matching a Decomposition (target class + spatial relation
         to an anchor), ordered best-first. Attributes are NOT filtered here (they
         need visual verification) — the VLM verification step disambiguates among
@@ -104,7 +124,7 @@ class SemanticMap:
 
         rel = decomp.spatial_relation
         if rel and decomp.anchor_object:
-            anchors = self.instances_of(decomp.anchor_object)
+            anchors = self._anchor_instances(decomp.anchor_object, _depth)
             if anchors:
                 if spatial.is_superlative_relation(rel):
                     ref = anchors[0].bbox
